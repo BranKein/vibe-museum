@@ -1,41 +1,9 @@
 /* Shared by every draft: the real exhibits, both languages and the idea form. Each draft only draws them its own way. */
 (function () {
-  var EXHIBITS = [
-    {
-      id: 'warehouse-tycoon',
-      no: 'VM-001',
-      status: 'live',
-      title: { ko: '창고 타이쿤', en: 'Warehouse Tycoon' },
-      blurb: {
-        ko: '창고를 소재로 한 3D 방치형 타이쿤. 공장을 짓고, 원자재를 들여와 가공하고, 트럭·배·비행기로 내다 판다.',
-        en: 'A 3D idle tycoon about warehouses. Build factories, bring in raw materials, process them and ship the goods out by truck, boat and plane.',
-      },
-      url: 'https://warehouse-tycoon.yeonhyuk.me',
-      repo: 'https://github.com/BranKein/vive-warehouse-tycoon',
-      version: 'v1.0.4',
-      deployed: '2026-10-15',
-      started: '2026-10-12',
-      days: 3,
-      stack: ['TypeScript', 'Three.js', 'Vite'],
-      pcOnly: true,
-      thumb: 'img/warehouse.jpg',
-      aspect: 4 / 3,
-    },
-    {
-      id: 'coding-problems',
-      no: 'VM-002',
-      status: 'upcoming',
-      title: { ko: '주기적 코딩 문제', en: 'Problem of the Week' },
-      blurb: {
-        ko: '코딩·SQL 문제를 주기적으로 만들어 쌓고, 구독한 사람에게 새 문제를 메일로 알린다.',
-        en: 'Coding and SQL problems made on a schedule, kept in a searchable list, with an email to subscribers for each new one.',
-      },
-      noted: '2026-10-12',
-      stack: [],
-      pcOnly: false,
-      aspect: 4 / 3,
-    },
-  ];
+  // Made at build time by scripts/collect.mjs (data/exhibits.js). Empty until it has run.
+  var EXHIBITS = window.VM_EXHIBITS || [];
+  // Made at build time by scripts/build.mjs (config.js). Without an API the idea form only shows a note.
+  var CONFIG = window.VM_CONFIG || { ideasApi: '', turnstileSiteKey: '' };
 
   var STRINGS = {
     site: { ko: '바이브 뮤지엄', en: 'Vive Museum' },
@@ -67,9 +35,18 @@
     fNeed: { ko: '제목과 설명을 적어 주세요.', en: 'Add a title and a description.' },
     fBadEmail: { ko: '이메일 주소를 확인해 주세요. 비워 두어도 됩니다.', en: 'Check the email address, or leave it empty.' },
     fSent: {
-      ko: '시안 화면이라 실제로 보내지는 않았습니다. 실제 사이트에서는 검토한 뒤 공개됩니다.',
-      en: 'This is a design draft, so nothing was sent. On the real site, ideas go public after review.',
+      ko: '아직 아이디어를 받을 준비가 되지 않아 보내지 않았습니다. 곧 열겠습니다.',
+      en: 'The idea box is not open yet, so nothing was sent. It opens soon.',
     },
+    fSending: { ko: '보내는 중…', en: 'Sending…' },
+    fThanks: { ko: '고맙습니다. 검토한 뒤 채택하면 이 박물관에 걸립니다.', en: 'Thank you. If we take it on, it goes up here.' },
+    fThanksMail: {
+      ko: '고맙습니다. 적어 주신 주소로 확인 메일을 보냈습니다. 링크를 눌러야 나중에 알림을 받습니다.',
+      en: 'Thank you. We sent a confirmation link to your address; open it to hear back when this is built.',
+    },
+    fRobot: { ko: '사람인지 확인하는 칸을 마쳐 주세요.', en: 'Please finish the human check.' },
+    fBusy: { ko: '잠시 뒤에 다시 보내 주세요. 짧은 시간에 너무 많이 보냈습니다.', en: 'Too many ideas in a short time. Try again later.' },
+    fFail: { ko: '보내지 못했습니다. 잠시 뒤에 다시 시도해 주세요.', en: 'Could not send it. Please try again later.' },
     privacy: {
       ko: '받는 항목: 제목, 설명, 이메일(선택). 이메일은 구현 알림에만 쓰고, 알림을 보내면 지웁니다.',
       en: 'We keep the title, description and, if given, your email. The email is used only for the build notice and deleted once it is sent.',
@@ -250,18 +227,71 @@
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') openThemes(false); });
   }
 
-  /** Fills a form that has #f-title, #f-desc, #f-email and a [data-form-status] element. */
+  var turnstileLoading = null;
+  function loadTurnstile() {
+    if (!turnstileLoading) {
+      turnstileLoading = new Promise(function (resolve, reject) {
+        var tag = document.createElement('script');
+        tag.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        tag.async = true;
+        tag.onload = function () { resolve(window.turnstile); };
+        tag.onerror = reject;
+        document.head.appendChild(tag);
+      });
+    }
+    return turnstileLoading;
+  }
+
+  /**
+   * Fills a form that has #f-title, #f-desc, #f-email and a [data-form-status] element.
+   * With an idea API in config.js it sends the idea (through Turnstile when a site key is set); otherwise it
+   * only checks the fields and says the box is not open yet.
+   */
   function wireForm(form) {
     var status = form.querySelector('[data-form-status]');
+    var send = form.querySelector('[type="submit"]');
+    var widget = null;
+    if (CONFIG.ideasApi && CONFIG.turnstileSiteKey) {
+      var box = document.createElement('div');
+      box.className = 'vm-turnstile';
+      box.style.minHeight = '65px';
+      form.insertBefore(box, send);
+      loadTurnstile().then(function (ts) {
+        widget = ts.render(box, { sitekey: CONFIG.turnstileSiteKey, language: lang, theme: mode === 'dark' ? 'dark' : 'light' });
+      }).catch(function () { /* the server says so if the token is missing */ });
+    }
+    function say(key, ok) {
+      status.textContent = t(key);
+      status.setAttribute('data-kind', ok ? 'ok' : 'error');
+      status.hidden = false;
+    }
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       var title = form.querySelector('#f-title').value.trim();
       var desc = form.querySelector('#f-desc').value.trim();
       var email = form.querySelector('#f-email').value.trim();
-      var key = !title || !desc ? 'fNeed' : email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? 'fBadEmail' : 'fSent';
-      status.textContent = t(key);
-      status.setAttribute('data-kind', key === 'fSent' ? 'ok' : 'error');
-      status.hidden = false;
+      if (!title || !desc) return say('fNeed', false);
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return say('fBadEmail', false);
+      if (!CONFIG.ideasApi) return say('fSent', true);
+      var token = widget !== null && window.turnstile ? window.turnstile.getResponse(widget) : '';
+      if (CONFIG.turnstileSiteKey && !token) return say('fRobot', false);
+      say('fSending', true);
+      if (send) send.disabled = true;
+      fetch(CONFIG.ideasApi + '/ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title, description: desc, email: email, turnstileToken: token, lang: lang }),
+      }).then(function (res) {
+        if (res.ok) {
+          form.reset();
+          say(email ? 'fThanksMail' : 'fThanks', true);
+        } else say(res.status === 429 ? 'fBusy' : res.status === 403 ? 'fRobot' : 'fFail', false);
+      }).catch(function () {
+        say('fFail', false);
+      }).then(function () {
+        if (send) send.disabled = false;
+        if (widget !== null && window.turnstile) window.turnstile.reset(widget);
+      });
     });
   }
 

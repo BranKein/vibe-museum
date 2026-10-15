@@ -1,0 +1,13 @@
+{
+  "name": "vive-museum",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "collect": "node scripts/collect.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "package:ideas": "node scripts/package-ideas.mjs"
+  }
+}

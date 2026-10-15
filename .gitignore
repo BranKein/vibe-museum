@@ -1,0 +1,5 @@
+node_modules/
+dist/
+data/
+img/exhibits/
+.DS_Store

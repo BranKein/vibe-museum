@@ -12,14 +12,62 @@
 | 야간 개장 | `night.html` | 큰 글씨와 큰 그림. 어둡게 보기에서는 손전등으로 둘러볼 수 있다 |
 
 - `index.html`은 지난번에 본 전시관으로, 처음이면 핀보드로 보낸다.
-- `shared.js`가 전시품 목록, 한국어·영어 문구, 공통 머리말·꼬리말, 전시관 고르기 창, 밝게/어둡게 전환, 아이디어 입력 칸을 맡는다.
-- 지금 전시품 목록은 `shared.js` 안에 직접 적혀 있다. 남은 일은 [PLAN.md](PLAN.md)에 있다.
-- 아이디어 입력 칸은 아직 아무 데도 보내지 않는다.
+- `shared.js`가 한국어·영어 문구, 공통 머리말·꼬리말, 전시관 고르기 창, 밝게/어둡게 전환, 아이디어 입력 칸을 맡는다.
+- 전시품 목록은 빌드 때 만든다(`data/exhibits.js`). 아래 "전시 목록".
+- 아이디어 입력 칸은 `config.js`에 함수 주소(`ideasApi`)가 있을 때만 실제로 보낸다. 없으면 아직 열지 않았다는 문구만 띄운다.
+- 남은 일은 [PLAN.md](PLAN.md)에 있다.
 
 ## 실행
 
-빌드 과정이 없다. 이 폴더를 정적 파일로 띄우면 된다.
+Node 22 이상. 의존성이 없다.
 
 ```bash
+npm run collect   # data/exhibits.js와 img/exhibits/를 만든다
 python3 -m http.server 5191
 ```
+
+- `npm test`: 전시 목록 만들기, 빌드, 아이디어 함수의 테스트
+- `npm run build`: `dist/`를 만든다(collect 포함). 환경 변수 `CF_BEACON_TOKEN`(Cloudflare Web Analytics), `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `SITE_URL`은 모두 선택
+
+## 전시 목록
+
+`scripts/collect.mjs`가 루트 저장소(`BranKein/vive-coding-playground`, 로컬에서는 이 저장소를 품은 폴더)를 읽는다.
+
+- 전시 중: `.gitmodules`의 각 저장소 main에서 `deploy/exhibit.json`과 `deploy/site.json`을 읽는다. 가장 최근 `v*` 태그가 있어야 걸린다. 주소는 `https://<subdomain>.yeonhyuk.me`, 버전·날짜는 그 태그, 제작 기간은 첫 커밋부터 `v1.0.0`까지(없으면 최근 태그까지).
+- 준비 중: `ideas/`에서 상태가 아이디어·보류·구현 중인 것. 박물관 자신과 이미 전시 중인 저장소는 뺀다. 영어 화면용 줄은 `ideas/README.md`의 형식을 따른다.
+
+`deploy/exhibit.json` 형식(예: vive-warehouse-tycoon):
+
+```json
+{
+  "title": { "ko": "창고 타이쿤", "en": "Warehouse Tycoon" },
+  "blurb": { "ko": "한두 문장", "en": "One or two sentences" },
+  "stack": ["TypeScript", "Three.js", "Vite"],
+  "thumbnail": "deploy/thumbnail.jpg",
+  "aspect": "4:3",
+  "pcOnly": true
+}
+```
+
+`id`(기본: 저장소 이름에서 `vive-`를 뺀 것)와 `aspect`(기본 4:3)는 생략할 수 있다. 썸네일이 없으면 자리표시 그림으로 걸린다.
+
+## 배포
+
+다른 프로젝트와 같은 구조다(루트 저장소 `docs/deploy.md`). `v*` 태그를 push하면 `.github/workflows/deploy.yml`이 테스트·빌드하고, vive-infra의 `sites/vive-museum`을 맞춘 뒤 S3에 올리고 CloudFront를 비운다.
+
+- 다른 프로젝트가 배포를 마치면 `repository_dispatch`(`exhibit-updated`)를 보내고, 이 워크플로가 가장 최근 태그를 새 전시 데이터로 다시 빌드·배포한다. 매일 아침(06:17 KST)과 수동 실행도 같다. 첫 태그 전에는 아무것도 하지 않는다.
+- Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`(IAM 사용자 `deploy-vive-museum`), `INFRA_REPO_TOKEN`
+- Variables: `AWS_REGION`, `S3_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`(설정됨). 선택: `CF_BEACON_TOKEN`, `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `IDEAS_FUNCTION_NAME`
+- 링크 미리보기: 모든 페이지에 Open Graph 태그(`img/og.png`), 전시품마다 `e/<id>.html`.
+
+## 방문자 아이디어 함수
+
+`lambda/ideas/`(Node.js 22, 의존성 없음). AWS 자원(API Gateway, DynamoDB, SES, SSM 파라미터)은 vive-infra의 `sites/vive-museum-ideas`가 만들고, 코드는 배포 워크플로가 올린다(`IDEAS_FUNCTION_NAME`이 있을 때).
+
+- `POST /ideas` → DynamoDB에 승인 대기로 저장, 운영자에게 승인·거절 메일, 이메일을 적었으면 확인 메일
+- `/review`, `/confirm`, `/unsubscribe` → 링크는 확인 화면만 열고, 화면의 버튼(POST)이 처리한다. 링크 토큰은 서명되어 있고 한 번만 쓴다
+- 승인하면 이 저장소에 `visitor-idea` 이슈(제목·설명만). 거절하면 지운다. 30일 동안 답이 없으면 DynamoDB TTL로 지워진다
+- 매시간 `{ "task": "cleanup" }`: 24시간 안에 확인하지 않은 이메일을 지운다
+- 배포 때 `{ "task": "built", "issues": [...] }`: `ideas/`에서 `- 출처: vive-museum#N`이 있고 완료된 아이디어의 방문자에게 한 번 알리고 지운다
+- Turnstile 비밀 키가 없으면(`unset`) 사람 확인을 건너뛴다. 요청 수 제한(주소마다 1시간에 5건)과 길이 제한(제목 100자, 설명 2,000자)은 늘 적용한다
+- 테스트 메일: `node scripts/test-mail.mjs > /tmp/mail.json` 뒤 `aws sesv2 send-email --region ap-northeast-2 --cli-input-json file:///tmp/mail.json`

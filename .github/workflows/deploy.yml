@@ -1,0 +1,166 @@
+# Deploys the museum.
+# - A tag v* (e.g. v0.0.1) tests and builds it, brings its hosting up to date in BranKein/vive-infra, then uploads
+#   the build to S3, refreshes CloudFront and updates the visitor idea function.
+# - Another project's deploy (repository_dispatch "exhibit-updated"), a manual run, or the daily run (which picks up
+#   changes to the root repository's ideas/) rebuild the latest released tag with fresh exhibit data. These skip
+#   the infra step and do nothing before the first release.
+name: deploy
+
+on:
+  push:
+    tags: ["v*"]
+  repository_dispatch:
+    types: [exhibit-updated]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 21 * * *" # 06:17 in Korea
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  INFRA_REPO: BranKein/vive-infra
+  SITE: vive-museum
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pick the release
+        id: release
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tag="$(git tag -l 'v*' --sort=-v:refname | head -n 1)"
+          if [[ -z "$tag" || -z "${{ vars.S3_BUCKET }}" ]]; then
+            echo "::notice::Not released yet; nothing to rebuild"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git checkout --quiet "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.release.outputs.tag != ''
+        with:
+          node-version: 22
+
+      - if: steps.release.outputs.tag != ''
+        run: npm test
+
+      - name: Build
+        if: steps.release.outputs.tag != ''
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ github.token }}
+          CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
+          IDEAS_API_URL: ${{ vars.IDEAS_API_URL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+        run: npm run build
+
+      # deploy/site.json is what this site wants from its hosting. A change is committed to the infra repository
+      # (its main push applies it); otherwise a tag there applies the site as it is.
+      - name: Bring the hosting up to date
+        id: infra
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${INFRA_REPO}.git" infra
+          cp deploy/site.json "infra/sites/${SITE}/site.auto.tfvars.json"
+          cd infra
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            ref="${SITE}/${TAG}"
+            git tag "$ref"
+            git push --quiet origin "$ref"
+          else
+            ref="main"
+            git commit --quiet -am "- chore: ${SITE} site settings from ${TAG}"
+            git push --quiet origin main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the infra apply
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
+          SHA: ${{ steps.infra.outputs.sha }}
+          REF: ${{ steps.infra.outputs.ref }}
+        run: |
+          id=""
+          for _ in $(seq 1 30); do
+            id="$(gh run list -R "$INFRA_REPO" --workflow apply.yml --commit "$SHA" --json databaseId,headBranch \
+              --jq "[.[] | select(.headBranch == \"$REF\")][0].databaseId // empty")"
+            [[ -n "$id" ]] && break
+            sleep 10
+          done
+          if [[ -z "$id" ]]; then
+            echo "::error::No apply run started in $INFRA_REPO for $REF"
+            exit 1
+          fi
+          echo "Waiting for https://github.com/$INFRA_REPO/actions/runs/$id"
+          timeout 20m gh run watch "$id" -R "$INFRA_REPO" --exit-status --interval 15 > /dev/null
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.release.outputs.tag != ''
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # No hashed file names here: pages are never cached, everything else for five minutes. Pages go last.
+      - name: Upload
+        if: steps.release.outputs.tag != ''
+        env:
+          BUCKET: ${{ vars.S3_BUCKET }}
+        run: |
+          aws s3 sync dist "s3://$BUCKET" --exclude "*.html" --cache-control "public, max-age=300"
+          aws s3 sync dist "s3://$BUCKET" --exclude "*" --include "*.html" --cache-control no-cache
+          aws s3 sync dist "s3://$BUCKET" --delete
+
+      - name: Refresh CloudFront
+        if: steps.release.outputs.tag != ''
+        run: |
+          aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*" --query Invalidation.Id --output text
+
+      # The visitor idea function lives in vive-infra; only its code ships from here. Set the variable
+      # IDEAS_FUNCTION_NAME once that stack is applied.
+      - name: Update the idea function
+        if: steps.release.outputs.tag != '' && vars.IDEAS_FUNCTION_NAME != ''
+        env:
+          FUNCTION: ${{ vars.IDEAS_FUNCTION_NAME }}
+        run: |
+          (cd lambda/ideas && zip -qr ../../ideas.zip . -x '*.test.*')
+          aws lambda update-function-code --function-name "$FUNCTION" --zip-file fileb://ideas.zip --query LastModified --output text
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION"
+
+      # Visitors whose idea (with "- 출처: vive-museum#N") is now "완료" get their one email.
+      - name: Tell visitors their idea is built
+        if: steps.release.outputs.tag != '' && vars.IDEAS_FUNCTION_NAME != ''
+        env:
+          FUNCTION: ${{ vars.IDEAS_FUNCTION_NAME }}
+        run: |
+          issues="$(cat data/built-issues.json)"
+          if [[ "$issues" == "[]" ]]; then
+            echo "No built visitor ideas"
+            exit 0
+          fi
+          aws lambda invoke --function-name "$FUNCTION" --cli-binary-format raw-in-base64-out \
+            --payload "{\"task\":\"built\",\"issues\":$issues}" result.json > /dev/null
+          cat result.json
