@@ -37,53 +37,6 @@
     },
   ];
 
-  /* Made-up exhibits, shown only when the viewer asks to see a fuller museum. Every one is marked as a sample. */
-  var SAMPLES = [
-    ['pixel-garden', 'live', '픽셀 정원', 'Pixel Garden', '씨앗을 심으면 픽셀 꽃이 자라는 작은 정원.', 'Plant a seed and watch pixel flowers grow.', 'v0.3.1', '2026-10-09', 2, ['TypeScript', 'Canvas'], false, 3 / 4, ['#2f6b4f', '#f4c95d', '#e86f68']],
-    ['weather-diary', 'live', '오늘의 날씨 일기', 'Weather Diary', '그날의 날씨와 한 줄 일기를 함께 남긴다.', 'One line of diary next to the day\'s weather.', 'v1.2.0', '2026-10-02', 5, ['React', 'Vite'], false, 1, ['#3d6fb6', '#cfe3f5', '#ffffff']],
-    ['subway-sound', 'live', '지하철 소리 지도', 'Subway Sound Map', '역마다 녹음한 소리를 노선도 위에서 듣는다.', 'Listen to sounds recorded at each station on the line map.', 'v1.0.0', '2026-09-21', 4, ['Svelte', 'Web Audio'], false, 16 / 9, ['#1d1d1f', '#3cb371', '#f2a900']],
-    ['grocery-split', 'live', '장보기 나누기', 'Grocery Splitter', '같이 산 장보기 영수증을 사람 수대로 나눈다.', 'Split a shared grocery receipt between people.', 'v2.0.1', '2026-09-14', 1, ['Vanilla JS'], false, 4 / 5, ['#f6e7d0', '#c8553d', '#2d3047']],
-    ['space-idle', 'live', '우주 정거장 키우기', 'Space Station Idle', '모듈을 붙여 가며 우주 정거장을 키우는 방치형 게임.', 'An idle game about bolting modules onto a space station.', 'v0.9.0', '2026-09-03', 6, ['Three.js', 'TypeScript'], true, 3 / 2, ['#0b1026', '#6c63ff', '#f5f3ff']],
-    ['hangul-puzzle', 'live', '한글 조각 퍼즐', 'Hangul Puzzle', '자음과 모음 조각을 맞춰 단어를 만든다.', 'Fit consonant and vowel tiles together into words.', 'v1.1.0', '2026-08-27', 3, ['Preact'], false, 2 / 3, ['#ffcf56', '#3a3335', '#f0544f']],
-    ['reading-log', 'upcoming', '독서 기록장', 'Reading Log', '읽은 책과 밑줄 친 문장을 모아 둔다.', 'Keep the books you read and the lines you underlined.', null, '2026-10-10', 0, [], false, 1, ['#d9d4c7', '#6b5e4a', '#ffffff']],
-    ['walk-map', 'upcoming', '동네 산책 지도', 'Neighbourhood Walks', '걸은 길을 지도에 겹쳐 그려 동네 지도를 만든다.', 'Layer the routes you walk into a map of your neighbourhood.', null, '2026-10-05', 0, [], false, 3 / 4, ['#e3efe6', '#2e7d5b', '#ffffff']],
-  ].map(function (r, i) {
-    var live = r[1] === 'live';
-    return {
-      id: r[0], no: 'EX-' + String(i + 1).padStart(2, '0'), status: r[1], sample: true,
-      title: { ko: r[2], en: r[3] }, blurb: { ko: r[4], en: r[5] },
-      url: live ? '#sample' : undefined, repo: live ? '#sample' : undefined,
-      version: r[6], deployed: live ? r[7] : undefined, noted: live ? undefined : r[7], started: live ? r[7] : undefined,
-      days: r[8], stack: r[9], pcOnly: r[10], aspect: r[11], colors: r[12],
-    };
-  });
-
-  /** Abstract placeholder art for a sample, drawn once. */
-  function art(e) {
-    if (e.thumb) return e.thumb;
-    var w = 600, h = Math.round(w / e.aspect);
-    var c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    var g = c.getContext('2d');
-    var col = e.colors;
-    g.fillStyle = col[0]; g.fillRect(0, 0, w, h);
-    var seed = 0;
-    for (var k = 0; k < e.id.length; k += 1) seed = (seed * 31 + e.id.charCodeAt(k)) % 9973;
-    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
-    for (var n = 0; n < 14; n += 1) {
-      g.globalAlpha = 0.25 + rnd() * 0.6;
-      g.fillStyle = col[1 + (n % 2)];
-      var x = rnd() * w, y = rnd() * h, r = 20 + rnd() * w * 0.22;
-      if (n % 3 === 0) g.fillRect(x - r / 2, y - r / 2, r, r * (0.4 + rnd()));
-      else { g.beginPath(); g.arc(x, y, r / 2, 0, Math.PI * 2); g.fill(); }
-    }
-    g.globalAlpha = 1;
-    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, h - 44, 130, 44);
-    g.fillStyle = '#fff'; g.font = '700 22px sans-serif'; g.fillText('SAMPLE', 16, h - 15);
-    e.thumb = c.toDataURL('image/jpeg', 0.85);
-    return e.thumb;
-  }
-
   var STRINGS = {
     site: { ko: '바이브 뮤지엄', en: 'Vive Museum' },
     tagline: { ko: '바이브 코딩으로 만든 것들을 모아 둔 작은 박물관', en: 'A small museum of things made by vibe coding' },
@@ -130,10 +83,6 @@
     toDark: { ko: '어둡게 보기', en: 'Dark mode' },
     toLight: { ko: '밝게 보기', en: 'Light mode' },
     footNote: { ko: '바이브 코딩으로 만든 프로젝트를 모아 전시합니다. 새 전시품은 배포될 때마다 자동으로 걸립니다.', en: 'Projects made by vibe coding, hung here automatically each time one ships.' },
-    preview: { ko: '미리보기용 예시 전시품', en: 'Preview with sample works' },
-    sample: { ko: '예시', en: 'Sample' },
-    fill: { ko: '예시 전시품으로 채워 보기', en: 'Preview with sample works' },
-    unfill: { ko: '예시 전시품 빼기', en: 'Remove sample works' },
     draft: { ko: '시안', en: 'Draft' },
   };
 
@@ -157,7 +106,6 @@
   var mode = read('vm.mode');
   if (mode !== 'dark' && mode !== 'light') mode = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.documentElement.setAttribute('data-mode', mode);
-  var samples = read('vm.samples') === '1';
 
   function t(key, params) {
     var entry = STRINGS[key];
@@ -165,9 +113,9 @@
     if (params) for (var name in params) text = text.replace('{' + name + '}', params[name]);
     return text;
   }
-  /** Display name of an exhibit; samples say so. */
+  /** Display name of an exhibit in the current language. */
   function name(e) {
-    return (e.sample ? '[' + t('sample') + '] ' : '') + e.title[lang];
+    return e.title[lang];
   }
   function pick(value) {
     return value && typeof value === 'object' ? value[lang] : value;
@@ -183,8 +131,7 @@
   }
   /** Live exhibits by last deployment, newest first; then upcoming ones by the date the idea was noted. */
   function exhibits() {
-    var all = samples ? EXHIBITS.concat(SAMPLES) : EXHIBITS;
-    all.forEach(function (e) { if (e.status === 'live' || e.sample) art(e); });
+    var all = EXHIBITS;
     var live = all.filter(function (e) { return e.status === 'live'; }).sort(function (a, b) { return b.deployed.localeCompare(a.deployed); });
     var up = all.filter(function (e) { return e.status !== 'live'; }).sort(function (a, b) { return b.noted.localeCompare(a.noted); });
     return live.concat(up);
@@ -214,8 +161,6 @@
     var names = document.querySelectorAll('[data-theme-name]');
     for (var q = 0; q < names.length; q += 1) names[q].textContent = here ? here.name[lang] : '';
     drawThemes();
-    var fills = document.querySelectorAll('[data-sample-toggle]');
-    for (var k = 0; k < fills.length; k += 1) fills[k].textContent = t(samples ? 'unfill' : 'fill');
     listeners.forEach(function (fn) { fn(lang); });
   }
 
@@ -299,7 +244,7 @@
     document.body.insertBefore(el('<header class="vm-bar" id="top"><a class="vm-home" href="#top"><span class="vm-logo" data-t="site"></span><span class="vm-tag" data-t="tagline"></span></a>' +
       '<div class="vm-tools"><button type="button" class="vm-hall" data-theme-toggle aria-haspopup="dialog"><span data-t="themeBtn"></span> <b data-theme-name></b> ▾</button>' +
       '<button type="button" data-lang-toggle></button><button type="button" class="vm-icon" data-mode-toggle></button></div></header>'), document.body.firstChild);
-    document.body.appendChild(el('<footer class="vm-foot"><p><b data-t="site"></b> · <span data-t="footNote"></span></p><div class="vm-links"><a href="https://github.com/BranKein" target="_blank" rel="noopener">GitHub</a><button type="button" data-sample-toggle></button><span>© 2026</span></div></footer>'));
+    document.body.appendChild(el('<footer class="vm-foot"><p><b data-t="site"></b> · <span data-t="footNote"></span></p><div class="vm-links"><a href="https://github.com/BranKein" target="_blank" rel="noopener">GitHub</a><span>© 2026</span></div></footer>'));
     document.body.appendChild(el('<div class="vm-modal" id="vm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vm-modal-h"><div class="vm-sheet"><div class="vm-head"><div><h2 id="vm-modal-h" data-t="themeTitle"></h2><p data-t="themeIntro"></p></div><button type="button" data-theme-close data-t="close"></button></div><div class="vm-grid" id="vm-grid"></div></div></div>'));
     document.getElementById('vm-modal').addEventListener('click', function (ev) { if (ev.target.id === 'vm-modal') openThemes(false); });
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') openThemes(false); });
@@ -327,10 +272,6 @@
     if (mt) { mode = mode === 'dark' ? 'light' : 'dark'; write('vm.mode', mode); document.documentElement.setAttribute('data-mode', mode); apply(); }
     if (event.target.closest && event.target.closest('[data-theme-toggle]')) openThemes(true);
     if (event.target.closest && event.target.closest('[data-theme-close]')) openThemes(false);
-    var fake = event.target.closest && event.target.closest('a[href="#sample"]');
-    if (fake) { event.preventDefault(); return; }
-    var fill = event.target.closest && event.target.closest('[data-sample-toggle]');
-    if (fill) { samples = !samples; write('vm.samples', samples ? '1' : '0'); apply(); }
   });
 
   window.VM = {
