@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Museum · Catalogue</title>
+<script>try{var m=localStorage.getItem('vm.mode');document.documentElement.setAttribute('data-mode',m==='dark'||m==='light'?m:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){document.documentElement.setAttribute('data-mode','light')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;400;600;800&display=swap">
+<style>
+/* Layout: an exhibition catalogue open on a desk; each spread is one plate and its catalogue entry; the last spread is the reader's reply page. */
+:root {
+  --desk: #d3d6d2;
+  --desk-hi: #e6e8e5;
+  --on-desk: #23221f;
+  --on-desk-soft: #5c5d58;
+  --mark: #7b2d2a;
+  --paper: #fbfbf8;
+  --paper-edge: #d8dad3;
+  --ink: #23221f;
+  --muted: #74726b;
+  --oxblood: #7b2d2a;
+  --serif: "Hahmlet", "Noto Serif KR", Georgia, serif;
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --desk: #2f3437;
+  --desk-hi: #474d52;
+  --on-desk: #f0f1ec;
+  --on-desk-soft: #c7c9c3;
+  --mark: #e6c9a8;
+  --paper: #e3e4de;
+  --paper-edge: #c4c6bf;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; overflow-wrap: break-word; }
+html, body { margin: 0; }
+body { background: radial-gradient(120% 90% at 50% 20%, var(--desk-hi), var(--desk)); color: var(--on-desk); font: 400 16px/1.7 var(--serif); }
+.desk { padding-inline: clamp(16px, 4vw, 48px); padding-block: 22px 64px; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; }
+.bar { max-width: 1180px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bar h1 { margin: 0; font-weight: 300; font-size: 15px; letter-spacing: .2em; text-transform: uppercase; color: var(--on-desk-soft); }
+.bar .ctl { display: flex; gap: 8px; align-items: center; }
+.bar button { font: 600 13px var(--serif); background: transparent; color: var(--on-desk); border: 1px solid var(--on-desk-soft); padding: 6px 12px; cursor: pointer; }
+.bar button:disabled { opacity: .35; cursor: default; }
+.pg { font-variant-numeric: tabular-nums; font-size: 13px; min-width: 70px; text-align: center; }
+.book { max-width: 1180px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1fr; background: var(--paper); color: var(--ink); box-shadow: 0 40px 60px -30px #000, 0 0 0 1px var(--paper-edge); position: relative; }
+.book::after { content: ""; position: absolute; inset: 0 auto 0 50%; width: 60px; margin-left: -30px; background: linear-gradient(90deg, transparent, rgba(0,0,0,.09) 45%, rgba(0,0,0,.16) 50%, rgba(0,0,0,.09) 55%, transparent); pointer-events: none; }
+.page { padding: clamp(22px, 4vw, 56px); min-height: 640px; display: grid; grid-template-rows: auto 1fr auto; gap: 18px; min-width: 0; }
+.run { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+.folio { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.left .folio { text-align: left; } .right .folio { text-align: right; }
+.plate { display: grid; align-content: center; gap: 12px; }
+.plate a { display: block; }
+.plate img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; box-shadow: 0 1px 0 var(--paper-edge); }
+.plate .void { aspect-ratio: 4 / 3; border: 1px solid var(--paper-edge); display: grid; place-items: center; color: var(--muted); font-style: italic; background: linear-gradient(135deg, transparent 49.6%, var(--paper-edge) 49.8% 50.2%, transparent 50.4%), linear-gradient(45deg, transparent 49.6%, var(--paper-edge) 49.8% 50.2%, transparent 50.4%); }
+.cap { font-size: 13px; color: var(--muted); }
+.cap b { color: var(--ink); font-weight: 600; letter-spacing: .06em; }
+.entry h2 { font-weight: 800; font-size: clamp(30px, 3.6vw, 46px); line-height: 1.1; margin: 0 0 4px; letter-spacing: -0.01em; text-wrap: balance; }
+.entry .sub { color: var(--oxblood); font-style: italic; margin: 0 0 22px; }
+.entry p { margin: 0 0 18px; max-width: 40ch; }
+.entry dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin: 0 0 22px; font-size: 14px; border-top: 1px solid var(--paper-edge); padding-top: 14px; }
+.entry dt { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.entry dd { margin: 0; }
+.note { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--paper-edge); padding-top: 10px; max-width: 46ch; }
+.note sup { color: var(--oxblood); }
+.entry .go { display: inline-block; font-weight: 600; color: var(--oxblood); text-decoration: none; border-bottom: 1px solid currentColor; margin-right: 18px; }
+.contents ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.contents li { display: flex; align-items: baseline; gap: 8px; }
+.contents li span.dots { flex: 1; border-bottom: 1px dotted var(--muted); transform: translateY(-4px); }
+.contents button { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-align: left; }
+.contents button:hover { color: var(--oxblood); }
+form { display: grid; gap: 14px; }
+label { display: grid; gap: 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+input, textarea { font: 400 17px/1.5 var(--serif); color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--ink); padding: 4px 0; width: 100%; border-radius: 0; }
+textarea { min-height: 120px; resize: vertical; border: 1px solid var(--paper-edge); padding: 8px; }
+input:focus, textarea:focus { outline: 2px solid var(--oxblood); }
+.hint { font-size: 12.5px; color: var(--muted); }
+.send { justify-self: start; font: 600 14px var(--serif); letter-spacing: .1em; background: var(--ink); color: var(--paper); border: 0; padding: 10px 22px; cursor: pointer; }
+[data-form-status] { margin: 0; font-size: 14px; }
+[data-kind="ok"] { color: #2f5a3a; } [data-kind="error"] { color: var(--oxblood); }
+.strip { max-width: 1180px; margin: 22px auto 0; display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x proximity; }
+.strip button { flex: 0 0 auto; width: 132px; display: grid; gap: 6px; text-align: left; font: 400 12px/1.35 var(--serif); color: var(--on-desk); background: none; border: 0; padding: 0; cursor: pointer; scroll-snap-align: start; }
+.strip .mini { aspect-ratio: 4 / 3; background: var(--paper); color: var(--ink); display: grid; place-items: center; overflow: hidden; outline: 2px solid transparent; outline-offset: 3px; font: 600 13px var(--serif); text-align: center; padding: 6px; }
+.strip .mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.strip button[aria-current="true"] .mini { outline-color: var(--mark); }
+.strip .lab { color: var(--on-desk-soft); } .strip button[aria-current="true"] .lab { color: var(--on-desk); }
+.strip .lab b { display: block; color: var(--mark); font-weight: 600; letter-spacing: .08em; font-size: 11px; }
+@media (max-width: 820px) { .book { grid-template-columns: minmax(0, 1fr); } .book::after { display: none; } .page { min-height: 0; } .left { border-bottom: 1px solid var(--paper-edge); } }
+</style>
+</head>
+<body data-hall="catalogue">
+<main class="desk">
+<div class="bar">
+  <h1 id="book-title"></h1>
+  <div class="ctl">
+    <button type="button" id="prev" aria-label="Previous spread">←</button>
+    <span class="pg" id="pg"></span>
+    <button type="button" id="next" aria-label="Next spread">→</button>
+  </div>
+</div>
+<div class="book" id="book"></div>
+<nav class="strip" id="strip" aria-label="All pages"></nav>
+</main>
+<div id="form-home" hidden>
+  <form id="idea-form" novalidate>
+    <label for="f-title"><span data-t="fTitle"></span><input id="f-title" maxlength="100" autocomplete="off"></label>
+    <label for="f-desc"><span data-t="fDesc"></span><textarea id="f-desc" maxlength="2000"></textarea></label>
+    <label for="f-email"><span data-t="fEmail"></span><input id="f-email" type="email" autocomplete="email"></label>
+    <span class="hint" data-t="fEmailHint"></span>
+    <button class="send" type="submit" data-t="fSend"></button>
+    <p data-form-status hidden></p>
+    <span class="hint" data-t="privacy"></span>
+  </form>
+</div>
+
+<script src="shared.js"></script>
+<script>
+var spread = 1;
+var form = document.getElementById('idea-form');
+function roman(n) { return ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 1] || String(n); }
+function run(label) { return '<div class="run"><span>' + VM.t('site') + '</span><span>' + label + '</span></div>'; }
+function draw() {
+  var ko = VM.lang === 'ko';
+  var list = VM.exhibits();
+  document.getElementById('book-title').textContent = ko ? '소장품 도록 2026' : 'Collection catalogue 2026';
+  var total = list.length + 2; // contents, plates, reply page
+  spread = Math.max(0, Math.min(total - 1, spread));
+  var book = document.getElementById('book');
+  var folioL = spread * 2 + 2, folioR = folioL + 1;
+  var left, right;
+  if (spread === 0) {
+    left = run(ko ? '소장품 도록 2026' : 'Collection catalogue 2026') +
+      '<div class="plate"><div class="entry"><h2>' + VM.t('site') + '</h2><p class="sub">' + VM.t('tagline') + '</p><p>' + VM.counts() + '</p></div></div><div class="folio">' + folioL + '</div>';
+    right = run(ko ? '차례' : 'Contents') +
+      '<div class="contents"><ol>' + list.map(function (e, i) {
+        return '<li><button type="button" data-go="' + (i + 1) + '">' + (ko ? '도판 ' : 'Plate ') + roman(i + 1) + ' · ' + VM.name(e) + '</button><span class="dots"></span><span>' + (i * 2 + 4) + '</span></li>';
+      }).join('') + '<li><button type="button" data-go="' + (list.length + 1) + '">' + (ko ? '부록 · 독자 의견' : 'Appendix · Reader reply') + '</button><span class="dots"></span><span>' + (list.length * 2 + 4) + '</span></li></ol></div><div class="folio">' + folioR + '</div>';
+  } else if (spread <= list.length) {
+    var e = list[spread - 1], live = e.status === 'live';
+    left = run((ko ? '도판 ' : 'Plate ') + roman(spread)) +
+      '<div class="plate">' + (live ? '<a href="' + e.url + '" target="_blank" rel="noopener"><img src="' + e.thumb + '" alt="' + VM.name(e) + '"></a>' : '<div class="void">' + VM.t('upcoming') + '</div>') +
+      '<div class="cap"><b>' + (ko ? '도판 ' : 'Plate ') + roman(spread) + '.</b> ' + VM.name(e) + (live ? ', ' + e.deployed.slice(0, 4) + '. ' + (ko ? '화면 갈무리.' : 'Screen capture.') : '. ' + (ko ? '도판 준비 중.' : 'Plate in preparation.')) + '</div></div><div class="folio">' + folioL + '</div>';
+    var rows = live
+      ? [[ko ? '재료' : 'Medium', e.stack.join(', ')], [VM.t('made'), VM.days(e.days) + ' (' + VM.date(e.started) + ' – )'], [VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)], [ko ? '소장 번호' : 'Accession', e.no]]
+      : [[VM.t('noted'), VM.date(e.noted)], [ko ? '소장 번호' : 'Accession', e.no]];
+    right = run(VM.t(live ? 'live' : 'upcoming')) +
+      '<div class="entry"><h2>' + VM.name(e) + '</h2><p class="sub">' + (live ? e.version + ', ' + e.deployed.slice(0, 4) : VM.t('upcoming')) + (e.pcOnly ? '<sup>1</sup>' : '') + '</p>' +
+      '<p>' + VM.pick(e.blurb) + '</p><dl>' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
+      (live ? '<a class="go" href="' + e.url + '" target="_blank" rel="noopener">' + VM.t('enter') + ' ↗</a><a class="go" href="' + e.repo + '" target="_blank" rel="noopener">' + VM.t('repo') + ' ↗</a>' : '') + '</div>' +
+      '<div><div class="note">' + (e.pcOnly ? '<sup>1</sup> ' + VM.t('pcOnly') + '.' : '&nbsp;') + '</div><div class="folio">' + folioR + '</div></div>';
+  } else {
+    left = run(ko ? '부록' : 'Appendix') + '<div class="entry"><h2>' + VM.t('formTitle') + '</h2><p>' + VM.t('formIntro') + '</p></div><div class="folio">' + folioL + '</div>';
+    right = run(ko ? '독자 의견' : 'Reader reply') + '<div id="form-slot"></div><div class="folio">' + folioR + '</div>';
+  }
+  book.innerHTML = '<section class="page left">' + left + '</section><section class="page right">' + right + '</section>';
+  var slot = document.getElementById('form-slot');
+  (slot || document.getElementById('form-home')).appendChild(form);
+  Array.prototype.forEach.call(book.querySelectorAll('[data-go]'), function (b) { b.addEventListener('click', function () { spread = Number(b.getAttribute('data-go')); draw(); }); });
+  var strip = document.getElementById('strip');
+  var items = [{ tag: ko ? '차례' : 'Contents', label: VM.t('site'), mini: ko ? '차례' : 'Contents' }]
+    .concat(list.map(function (e, i) { return { tag: (ko ? '도판 ' : 'Plate ') + roman(i + 1), label: VM.name(e), img: e.status === 'live' ? e.thumb : null, mini: VM.t('upcoming') }; }))
+    .concat([{ tag: ko ? '부록' : 'Appendix', label: VM.t('formTitle'), mini: ko ? '독자 의견' : 'Reader reply' }]);
+  strip.innerHTML = items.map(function (it, k) {
+    return '<button type="button" data-go="' + k + '" aria-current="' + (k === spread) + '"><span class="mini">' + (it.img ? '<img src="' + it.img + '" alt="">' : it.mini) + '</span><span class="lab"><b>' + it.tag + '</b>' + it.label + '</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(strip.querySelectorAll('[data-go]'), function (b) { b.addEventListener('click', function () { spread = Number(b.getAttribute('data-go')); draw(); }); });
+  var cur = strip.querySelector('[aria-current="true"]');
+  if (cur) strip.scrollLeft = Math.max(0, cur.offsetLeft - strip.clientWidth / 2 + cur.clientWidth / 2);
+  document.getElementById('pg').textContent = (spread + 1) + ' / ' + total;
+  document.getElementById('prev').disabled = spread === 0;
+  document.getElementById('next').disabled = spread === total - 1;
+}
+document.getElementById('prev').addEventListener('click', function () { spread -= 1; draw(); });
+document.getElementById('next').addEventListener('click', function () { spread += 1; draw(); });
+document.addEventListener('keydown', function (ev) {
+  if (ev.target.closest('input, textarea')) return;
+  if (ev.key === 'ArrowLeft') { spread -= 1; draw(); }
+  if (ev.key === 'ArrowRight') { spread += 1; draw(); }
+});
+VM.onLang(draw);
+VM.wireForm(form);
+VM.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Museum · Gallery Walk</title>
+<script>try{var m=localStorage.getItem('vm.mode');document.documentElement.setAttribute('data-mode',m==='dark'||m==='light'?m:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){document.documentElement.setAttribute('data-mode','light')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: the same 3D hall, with no panel over it. Each work has a label board on the wall beside it, and its buttons are on that board. */
+:root {
+  --bg: #eeefec;
+  --panel: rgba(255, 255, 255, .86);
+  --fg: #18191b;
+  --muted: #61646a;
+  --line: #d8dad6;
+  --accent: #e3b45d;
+  --accent-text: #8a5f12;
+  --stage: #c9ccd0;
+  --strip: #e3e5e1;
+  --thumb: #d3d6d2;
+  --field: #ffffff;
+  --display: "Noto Serif KR", Georgia, serif;
+  --body: "Noto Sans KR", system-ui, sans-serif;
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --bg: #16181b;
+  --panel: rgba(18, 20, 23, .82);
+  --fg: #f1efe9;
+  --muted: #a8a8a2;
+  --line: #2c2f34;
+  --accent-text: #e3b45d;
+  --stage: #0f1012;
+  --strip: #111214;
+  --thumb: #24262a;
+  --field: #1e2024;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; overflow-wrap: break-word; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.6 var(--body); }
+.ideas { margin-bottom: 56px; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage { position: relative; height: min(78vh, 760px); min-height: 440px; background: var(--stage); overflow: hidden; touch-action: pan-y; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.btn { font: 500 13px var(--body); background: var(--panel); color: var(--fg); border: 1px solid rgba(255,255,255,.18); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.info { position: absolute; left: 20px; bottom: 20px; width: min(420px, calc(100% - 40px)); background: var(--panel); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 16px 18px; }
+.info .no { color: var(--accent); font-size: 12px; letter-spacing: .14em; }
+.info h2 { margin: 2px 0 6px; font: 700 24px/1.2 var(--display); }
+.info p { margin: 0 0 10px; color: #d6d4cd; font-size: 14px; }
+.info dl { margin: 0 0 12px; display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 13px; }
+.info dt { color: var(--muted); }
+.info dd { margin: 0; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.tags span { font-size: 11.5px; border: 1px solid rgba(255,255,255,.25); padding: 1px 9px; border-radius: 999px; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.acts a { text-decoration: none; font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); }
+.acts a.primary { background: var(--accent); color: #1a1408; border-color: var(--accent); }
+.walk { position: absolute; right: 20px; bottom: 20px; display: flex; gap: 8px; }
+.stage.panel-right .walk { right: auto; left: 20px; }
+.info.right { left: auto; right: 20px; width: min(360px, 38%); }
+.walk .btn { width: 42px; height: 42px; padding: 0; font-size: 18px; }
+.hint { position: absolute; right: 20px; top: 14px; color: #f1efe9; font-size: 12px; background: rgba(18,20,23,.55); padding: 4px 10px; border-radius: 999px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hotspots a { position: absolute; display: block; border-radius: 999px; text-indent: -9999px; overflow: hidden; transition: box-shadow .15s, background-color .15s; }
+.hotspots a:hover, .hotspots a:focus-visible { background: rgba(255,255,255,.14); box-shadow: 0 0 0 3px rgba(227,180,93,.95); outline: none; }
+.hotspots[hidden] { display: none; }
+.fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
+.strip { display: flex; gap: 12px; overflow-x: auto; padding: 16px 20px 18px; background: var(--strip); border-bottom: 1px solid var(--line); scroll-snap-type: x proximity; }
+.strip button { flex: 0 0 auto; width: 150px; padding: 0; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; display: grid; gap: 6px; font: 400 12.5px/1.35 var(--body); scroll-snap-align: start; }
+.strip .th { aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; background: var(--thumb); outline: 2px solid transparent; outline-offset: 2px; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.strip .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.strip button[aria-current="true"] .th { outline-color: var(--accent); }
+.strip button span.n { color: var(--muted); }
+.strip button[aria-current="true"] span.n { color: var(--accent-text); }
+.ideas { max-width: 760px; margin: 40px auto 56px; padding-inline: 20px; display: grid; gap: 10px; }
+.ideas h2 { margin: 0; font: 700 30px/1.2 var(--display); }
+.ideas > p { margin: 0 0 8px; color: var(--muted); }
+form { display: grid; gap: 12px; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+input, textarea { font: 400 16px/1.5 var(--body); color: var(--fg); background: var(--field); border: 1px solid var(--line); padding: 10px 12px; width: 100%; border-radius: 10px; }
+textarea { min-height: 110px; resize: vertical; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.fhint { font-size: 12.5px; color: var(--muted); }
+.send { justify-self: start; font: 700 15px var(--body); background: var(--accent); color: #1a1408; border: 0; padding: 10px 24px; border-radius: 999px; cursor: pointer; }
+[data-form-status] { margin: 0; }
+[data-kind="ok"] { color: var(--accent); } [data-kind="error"] { color: #f19a86; }
+@media (max-width: 640px) {
+  .stage { height: 70vh; }
+  .info { left: 12px; right: 12px; bottom: 12px; width: auto; padding: 12px 14px; }
+  .info p { display: none; }
+  .walk, .stage.panel-right .walk { top: calc(64px + env(safe-area-inset-top, 0px)); bottom: auto; left: auto; right: 12px; }
+  .info.right { left: 12px; right: 12px; width: auto; }
+  .hint { display: none; }
+}
+</style>
+</head>
+<body data-hall="hall">
+<section class="stage" id="stage" aria-label="3D gallery">
+  <div class="hint" id="hint"></div>
+  <div class="sr" id="info" aria-live="polite"></div>
+  <div class="hotspots" id="hotspots" hidden></div>
+  <div class="walk"><button class="btn" type="button" id="prev" aria-label="Previous">←</button><button class="btn" type="button" id="next" aria-label="Next">→</button></div>
+</section>
+<nav class="strip" id="strip" aria-label="Works"></nav>
+<section class="ideas" aria-labelledby="ideas-h">
+  <h2 id="ideas-h" data-t="formTitle"></h2>
+  <p data-t="formIntro"></p>
+  <form id="idea-form" novalidate>
+    <label for="f-title"><span data-t="fTitle"></span><input id="f-title" maxlength="100" autocomplete="off"></label>
+    <label for="f-desc"><span data-t="fDesc"></span><textarea id="f-desc" maxlength="2000"></textarea></label>
+    <label for="f-email"><span data-t="fEmail"></span><input id="f-email" type="email" autocomplete="email"></label>
+    <span class="fhint" data-t="fEmailHint"></span>
+    <button class="send" type="submit" data-t="fSend"></button>
+    <p data-form-status hidden></p>
+    <span class="fhint" data-t="privacy"></span>
+  </form>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="shared.js"></script>
+<script>
+var stage = document.getElementById('stage');
+var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var SPACING = 7, WALL_X = 4.2, EYE = 1.6;
+var current = 0, list = [], world = null;
+
+var BOARD_W = 1.75;
+/** Words that fit one line at the current font, Korean and English alike (broken at spaces). */
+function wrap(g, text, width, maxLines) {
+  var words = text.split(' '), lines = [], line = '';
+  words.forEach(function (w) {
+    var test = line ? line + ' ' + w : w;
+    if (g.measureText(test).width > width && line) { lines.push(line); line = w; } else line = test;
+  });
+  if (line) lines.push(line);
+  if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] += '…'; }
+  return lines;
+}
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+/** The wall label beside a work: its facts, and for a work on view the two buttons. Button rectangles come back in board units. */
+function boardFor(e, i, height) {
+  var BH = Math.max(2.1, height), CW = 900, CH = Math.round(CW * BH / BOARD_W), pad = 56, live = e.status === 'live';
+  var c = document.createElement('canvas'); c.width = CW; c.height = CH;
+  var g = c.getContext('2d');
+  g.fillStyle = '#f7f5f0'; g.fillRect(0, 0, CW, CH);
+  g.strokeStyle = '#d9d4c8'; g.lineWidth = 4; g.strokeRect(2, 2, CW - 4, CH - 4);
+  var y = pad + 30;
+  g.fillStyle = '#a77a22'; g.font = '500 34px "Noto Sans KR", sans-serif'; g.fillText(e.no + '  ·  ' + (i + 1) + ' / ' + list.length, pad, y);
+  y += 30;
+  g.fillStyle = '#18181a'; g.font = '900 84px "Noto Serif KR", serif';
+  wrap(g, VM.name(e), CW - pad * 2, 2).forEach(function (l) { y += 100; g.fillText(l, pad, y); });
+  y += 38;
+  g.font = '500 32px "Noto Sans KR", sans-serif';
+  var x = pad;
+  [VM.t(live ? 'live' : 'upcoming')].concat(e.pcOnly ? [VM.t('pcOnly')] : []).forEach(function (tag) {
+    var w = g.measureText(tag).width + 40;
+    g.strokeStyle = '#8b877d'; g.lineWidth = 2; roundRect(g, x, y, w, 56, 28); g.stroke();
+    g.fillStyle = '#3a3936'; g.fillText(tag, x + 20, y + 39); x += w + 14;
+  });
+  y += 80;
+  g.fillStyle = '#3b3a37'; g.font = '400 39px "Noto Sans KR", sans-serif';
+  wrap(g, VM.pick(e.blurb), CW - pad * 2, 4).forEach(function (l) { y += 58; g.fillText(l, pad, y); });
+  y += 30;
+  var rows = live ? [[VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)], [VM.t('stack'), e.stack.join(', ')], [VM.t('made'), VM.days(e.days)]] : [[VM.t('noted'), VM.date(e.noted)]];
+  g.font = '400 35px "Noto Sans KR", sans-serif';
+  rows.forEach(function (r) {
+    y += 56;
+    g.fillStyle = '#8b877d'; g.fillText(r[0], pad, y);
+    g.fillStyle = '#18181a'; g.fillText(r[1], pad + 250, y);
+  });
+  var buttons = [];
+  if (live) {
+    var bh = 108, by = CH - pad - bh, bx = pad;
+    [['enter', VM.t('enter') + ' ↗', e.url, true], ['repo', VM.t('repo') + ' ↗', e.repo, false]].forEach(function (b) {
+      g.font = '700 42px "Noto Sans KR", sans-serif';
+      var bw = g.measureText(b[1]).width + 96;
+      roundRect(g, bx, by, bw, bh, bh / 2);
+      if (b[3]) { g.fillStyle = '#e3b45d'; g.fill(); g.fillStyle = '#1a1408'; } else { g.strokeStyle = '#18181a'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#18181a'; }
+      g.fillText(b[1], bx + 48, by + 69);
+      buttons.push({ label: b[1], url: b[2], x0: (bx / CW - 0.5) * BOARD_W, x1: ((bx + bw) / CW - 0.5) * BOARD_W, y0: (0.5 - by / CH) * BH, y1: (0.5 - (by + bh) / CH) * BH });
+      bx += bw + 24;
+    });
+  }
+  var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  return { tex: t, h: BH, buttons: buttons };
+}
+function clothTexture(e) {
+  var c = document.createElement('canvas'); c.width = 512; c.height = 384;
+  var g = c.getContext('2d');
+  var grad = g.createLinearGradient(0, 0, 512, 0);
+  for (var k = 0; k <= 8; k += 1) grad.addColorStop(k / 8, k % 2 ? '#8d8a83' : '#a7a49c');
+  g.fillStyle = grad; g.fillRect(0, 0, 512, 384);
+  g.fillStyle = 'rgba(20,20,20,.75)'; g.fillRect(0, 300, 512, 84);
+  g.fillStyle = '#f1efe9'; g.font = '700 34px "Noto Sans KR", sans-serif'; g.textAlign = 'center';
+  g.fillText(VM.t('upcoming'), 256, 354);
+  var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+}
+function slotFor(i) {
+  var side = i % 2 === 0 ? -1 : 1;
+  var z = -6 - Math.floor(i / 2) * SPACING - (side > 0 ? SPACING / 2 : 0);
+  return { side: side, z: z, x: side * WALL_X };
+}
+/** The part of the stage the title and the walk buttons leave free, in stage pixels. */
+function freeArea() {
+  var W = stage.clientWidth, H = stage.clientHeight;
+  return { x: 12, y: 44, w: W - 24, h: H - 44 - 76 };
+}
+/**
+ * Where the camera stands for a work: square in front of it, close enough that
+ * the frame fills the free part of the screen. The returned offset shifts the
+ * picture so the frame sits in that free part without turning the camera.
+ */
+function viewFor(i) {
+  var W = stage.clientWidth || 1, H = stage.clientHeight || 1;
+  if (i < 0 || !world || !world.dims[i]) return { pos: new THREE.Vector3(0, EYE, 4), look: new THREE.Vector3(0, EYE, -20), off: { x: 0, y: 0 } };
+  var s = slotFor(i), dim = world.dims[i], free = freeArea();
+  var center = world.holders[i].localToWorld(new THREE.Vector3(dim.cx, 0, 0));
+  var tanV = Math.tan(THREE.MathUtils.degToRad(world.camera.fov / 2));
+  var d = Math.max(dim.w * H / (0.92 * free.w * 2 * tanV), dim.h * H / (0.92 * free.h * 2 * tanV));
+  d = Math.max(1.1, Math.min(WALL_X * 2 - 0.4, d));
+  var off = { x: W / 2 - (free.x + free.w / 2), y: H / 2 - (free.y + free.h / 2) };
+  return { pos: new THREE.Vector3(center.x - s.side * d, 1.75, center.z), look: new THREE.Vector3(center.x, 1.75, center.z), off: off };
+}
+function applyOffset(off) {
+  var W = stage.clientWidth, H = stage.clientHeight;
+  if (!W || !H) return;
+  world.off = { x: off.x, y: off.y };
+  world.camera.setViewOffset(W, H, off.x, off.y, W, H);
+}
+
+function build() {
+  var renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true }); } catch (err) { renderer = null; }
+  if (!renderer || !renderer.getContext()) {
+    var fb = document.createElement('div'); fb.className = 'fallback';
+    fb.textContent = VM.lang === 'ko' ? '이 브라우저에서는 3D 전시관을 보여 줄 수 없습니다. 아래 목록에서 둘러보세요.' : 'This browser cannot show the 3D hall. Browse the list below instead.';
+    stage.insertBefore(fb, stage.firstChild);
+    return null;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.domElement.addEventListener('webglcontextlost', function (ev) { ev.preventDefault(); });
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = false;
+  stage.insertBefore(renderer.domElement, stage.firstChild);
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color('#1b1c1f');
+  scene.fog = new THREE.Fog('#1b1c1f', 18, 60);
+  var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 120);
+  scene.add(new THREE.HemisphereLight('#fff6e8', '#3b3530', 0.75));
+  var key = new THREE.DirectionalLight('#ffffff', 0.35); key.position.set(2, 8, 4); scene.add(key);
+  var group = new THREE.Group(); scene.add(group);
+  return { renderer: renderer, scene: scene, camera: camera, group: group, frames: [], textures: [], dims: [], holders: [], boards: [], off: { x: 0, y: 0 } };
+}
+
+function furnish() {
+  if (!world) return;
+  var g = world.group;
+  while (g.children.length) g.remove(g.children[0]);
+  world.textures.forEach(function (t) { t.dispose(); }); world.textures = [];
+  world.frames = []; world.dims = []; world.holders = []; world.boards = [];
+  var length = Math.max(20, Math.ceil(list.length / 2) * SPACING + 14);
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ color: '#6b4f37', roughness: 0.55, metalness: 0.05 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 4 - length / 2); g.add(floor);
+  for (var b = 0; b < length; b += 1.2) {
+    var seam = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, 0.02), new THREE.MeshBasicMaterial({ color: '#4a3726' }));
+    seam.rotation.x = -Math.PI / 2; seam.position.set(0, 0.002, 4 - b); g.add(seam);
+  }
+  var wallMat = new THREE.MeshStandardMaterial({ color: '#e7e3dc', roughness: 0.95 });
+  [-1, 1].forEach(function (side) {
+    var wall = new THREE.Mesh(new THREE.PlaneGeometry(length, 4.2), wallMat);
+    wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; wall.position.set(side * WALL_X, 2.1, 4 - length / 2); g.add(wall);
+    var base = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, length), new THREE.MeshStandardMaterial({ color: '#2b2622' }));
+    base.position.set(side * (WALL_X - 0.03), 0.07, 4 - length / 2); g.add(base);
+  });
+  var end = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, 4.2), wallMat); end.position.set(0, 2.1, 4 - length); g.add(end);
+  var dark = VM.mode === 'dark';
+  world.scene.background.set(dark ? '#1b1c1f' : '#c9ccd0');
+  world.scene.fog.color.set(dark ? '#1b1c1f' : '#c9ccd0');
+  var ceil = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ color: dark ? '#2a2a2c' : '#d9d9d4' }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, 4 - length / 2); g.add(ceil);
+  var loader = new THREE.TextureLoader();
+  list.forEach(function (e, i) {
+    var s = slotFor(i), live = e.status === 'live';
+    var h = 2.1, w = Math.min(3.4, Math.max(1.4, h * (e.aspect || 4 / 3)));
+    if (w === 3.4) h = w / (e.aspect || 4 / 3);
+    var holder = new THREE.Group(); holder.position.set(s.x - s.side * 0.06, 1.75, s.z); holder.rotation.y = s.side < 0 ? Math.PI / 2 : -Math.PI / 2; g.add(holder);
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.26, h + 0.26, 0.08), new THREE.MeshStandardMaterial({ color: live ? '#2a241d' : '#55524c', roughness: 0.6 }));
+    holder.add(frame);
+    var tex = live ? loader.load(e.thumb) : clothTexture(e);
+    if (live) tex.encoding = THREE.sRGBEncoding;
+    world.textures.push(tex);
+    var art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+    art.position.z = 0.045; art.userData.index = i; holder.add(art); world.frames.push(art);
+    var info = boardFor(e, i, h + 0.26); world.textures.push(info.tex);
+    var bx = (w + 0.26) / 2 + 0.4 + BOARD_W / 2;
+    var board = new THREE.Mesh(new THREE.PlaneGeometry(BOARD_W, info.h), new THREE.MeshBasicMaterial({ map: info.tex }));
+    board.position.set(bx, 0, 0.02); holder.add(board);
+    var left = -(w + 0.26) / 2, right = bx + BOARD_W / 2;
+    world.dims[i] = { w: right - left, h: Math.max(h + 0.26, info.h), cx: (left + right) / 2 };
+    world.holders[i] = holder; world.boards[i] = { mesh: board, buttons: info.buttons };
+    var pool = new THREE.PointLight('#ffe7c2', 0.9, 6, 2); pool.position.set(s.x - s.side * 1.4, 3.6, s.z); g.add(pool);
+  });
+}
+
+var anim = null, yaw = 0;
+function go(i, instant) {
+  current = Math.max(-1, Math.min(list.length - 1, i));
+  panel(); strip();
+  if (!world) return;
+  var to = viewFor(current), cam = world.camera;
+  var from = { pos: cam.position.clone(), look: world.look ? world.look.clone() : to.look.clone(), off: world.off || { x: 0, y: 0 } };
+  yaw = 0;
+  if (instant || reduce) { cam.position.copy(to.pos); world.look = to.look.clone(); applyOffset(to.off); anim = null; return; }
+  anim = { from: from, to: to, t0: performance.now(), dur: 1400 };
+}
+function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+function loop(now) {
+  // Ask for the next frame first, so one bad frame never stops the hall from drawing.
+  requestAnimationFrame(loop);
+  if (world && !world.look) world.look = viewFor(Math.max(0, current)).look.clone();
+  if (world) {
+    fit();
+    var cam = world.camera;
+    if (anim) {
+      var k = Math.min(1, (now - anim.t0) / anim.dur), e = ease(k);
+      cam.position.lerpVectors(anim.from.pos, anim.to.pos, e);
+      world.look = anim.from.look.clone().lerp(anim.to.look, e);
+      cam.position.y += Math.sin(k * Math.PI * 4) * 0.025 * (1 - k);
+      applyOffset({ x: anim.from.off.x + (anim.to.off.x - anim.from.off.x) * e, y: anim.from.off.y + (anim.to.off.y - anim.from.off.y) * e });
+      if (k >= 1) anim = null;
+    }
+    var look = world.look.clone().sub(cam.position);
+    look.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    cam.lookAt(cam.position.clone().add(look));
+    world.renderer.render(world.scene, cam);
+    placeHotspots();
+  }
+}
+/** Real links laid exactly over the buttons painted on the current board, so they open like any link. */
+function placeHotspots() {
+  var box = document.getElementById('hotspots');
+  var b = world.boards[current];
+  if (anim || current < 0 || !b || !b.buttons.length || Math.abs(yaw) > 0.02) { box.hidden = true; return; }
+  var W = stage.clientWidth, H = stage.clientHeight, links = box.children;
+  b.buttons.forEach(function (btn, k) {
+    var a = b.mesh.localToWorld(new THREE.Vector3(btn.x0, btn.y0, 0)).project(world.camera);
+    var z = b.mesh.localToWorld(new THREE.Vector3(btn.x1, btn.y1, 0)).project(world.camera);
+    var el = links[k];
+    if (!el) return;
+    el.style.left = ((a.x + 1) / 2 * W) + 'px';
+    el.style.top = ((1 - a.y) / 2 * H) + 'px';
+    el.style.width = ((z.x - a.x) / 2 * W) + 'px';
+    el.style.height = ((a.y - z.y) / 2 * H) + 'px';
+  });
+  box.hidden = false;
+}
+function resize() {
+  if (!world) return;
+  var w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  world.size = w + 'x' + h;
+  world.renderer.setSize(w, h, false);
+  world.camera.aspect = w / h; world.camera.updateProjectionMatrix();
+  // The free part of the screen changed, so stand where the frame fills it again.
+  if (!anim && list.length) { var v = viewFor(current); world.camera.position.copy(v.pos); world.look = v.look.clone(); applyOffset(v.off); }
+}
+function fit() {
+  if (world.size !== stage.clientWidth + 'x' + stage.clientHeight) resize();
+}
+
+function panel() {
+  var info = document.getElementById('info'), box = document.getElementById('hotspots');
+  box.innerHTML = '';
+  if (current < 0) { info.textContent = VM.t('site') + '. ' + VM.counts(); return; }
+  var e = list[current], live = e.status === 'live';
+  info.textContent = VM.name(e) + '. ' + VM.pick(e.blurb);
+  if (live) box.innerHTML = '<a href="' + e.url + '" target="_blank" rel="noopener">' + VM.t('enter') + '</a><a href="' + e.repo + '" target="_blank" rel="noopener">' + VM.t('repo') + '</a>';
+}
+function strip() {
+  var box = document.getElementById('strip');
+  box.innerHTML = list.map(function (e, i) {
+    var img = e.status === 'live' ? '<img src="' + e.thumb + '" alt="">' : VM.t('upcoming');
+    return '<button type="button" data-i="' + i + '" aria-current="' + (i === current) + '"><span class="th">' + img + '</span><span><span class="n">' + String(i + 1).padStart(2, '0') + '</span> ' + VM.name(e) + '</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) { b.addEventListener('click', function () { go(Number(b.getAttribute('data-i'))); stage.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }); });
+  var cur = box.querySelector('[aria-current="true"]');
+  if (cur) box.scrollLeft = Math.max(0, cur.offsetLeft - box.clientWidth / 2 + cur.clientWidth / 2);
+}
+
+// Drag to look around a little; click a picture to walk to it.
+var drag = null;
+stage.addEventListener('pointerdown', function (ev) { if (ev.target.tagName === 'CANVAS') drag = { x: ev.clientX, y: ev.clientY, yaw: yaw, moved: false }; });
+window.addEventListener('pointermove', function (ev) {
+  if (!drag) return;
+  var dx = ev.clientX - drag.x;
+  if (Math.abs(dx) > 4) drag.moved = true;
+  yaw = Math.max(-0.9, Math.min(0.9, drag.yaw + dx * 0.004));
+});
+window.addEventListener('pointerup', function (ev) {
+  if (drag && !drag.moved && world) {
+    var r = world.renderer.domElement.getBoundingClientRect();
+    var p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    var ray = new THREE.Raycaster(); ray.setFromCamera(p, world.camera);
+    var hit = ray.intersectObjects(world.frames)[0];
+    if (hit) go(hit.object.userData.index);
+  }
+  drag = null;
+});
+document.getElementById('prev').addEventListener('click', function () { go(current - 1); });
+document.getElementById('next').addEventListener('click', function () { go(current + 1); });
+document.addEventListener('keydown', function (ev) {
+  if (ev.target.closest('input, textarea')) return;
+  if (ev.key === 'ArrowLeft') go(current - 1);
+  if (ev.key === 'ArrowRight') go(current + 1);
+});
+window.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+
+function render() {
+  list = VM.exhibits();
+  if (current >= list.length) current = list.length - 1;
+  document.getElementById('hint').textContent = VM.lang === 'ko' ? '액자 옆 안내판의 버튼을 눌러 들어갑니다. 끌어서 둘러볼 수 있습니다.' : 'Press the buttons on the label beside each work. Drag to look around.';
+  furnish();
+  go(current, true);
+}
+
+world = window.THREE ? build() : null;
+if (!window.THREE) { var fb = document.createElement('div'); fb.className = 'fallback'; fb.textContent = '3D'; stage.insertBefore(fb, stage.firstChild); }
+resize();
+VM.onLang(function () { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(render); });
+VM.wireForm(document.getElementById('idea-form'));
+VM.start();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

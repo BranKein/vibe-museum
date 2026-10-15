@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Museum · Pinboard</title>
+<script>try{var m=localStorage.getItem('vm.mode');document.documentElement.setAttribute('data-mode',m==='dark'||m==='light'?m:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){document.documentElement.setAttribute('data-mode','light')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: a pinboard of thumbnails in their own proportions; hovering a card opens its label underneath, or turns it over. */
+:root {
+  --bg: #f3f4f1;
+  --card: #ffffff;
+  --ink: #191b1a;
+  --muted: #6a6f6b;
+  --line: #e1e3de;
+  --accent: #0f6e5a;
+  --soft: #e7efe9;
+  --display: "Song Myung", "IBM Plex Sans KR", serif;
+  --body: "IBM Plex Sans KR", system-ui, sans-serif;
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --bg: #121413;
+  --card: #1c1f1e;
+  --ink: #eceee9;
+  --muted: #9aa19c;
+  --line: #2c302e;
+  --accent: #4fbf9f;
+  --soft: #1f3a32;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; overflow-wrap: break-word; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--body); }
+main, .tools, .ideas, .intro { margin-inline: clamp(16px, 3vw, 40px); }
+.intro { padding-top: 26px; }
+.intro h1 { font: 400 clamp(30px, 4.4vw, 50px)/1.05 var(--display); margin: 0 0 6px; }
+.intro p { margin: 0 0 18px; color: var(--muted); }
+.ideas { margin-bottom: 56px; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+.seg { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { font: 500 13px var(--body); border: 0; background: none; color: var(--muted); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.seg-label { font-size: 13px; color: var(--muted); }
+.board { columns: 4 250px; column-gap: 16px; }
+.pin { break-inside: avoid; margin: 0 0 16px; position: relative; perspective: 1200px; }
+.face { background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: box-shadow .25s, transform .5s cubic-bezier(.3,.7,.2,1); }
+.pin:hover .face, .pin:focus-within .face, .pin.open .face { box-shadow: 0 14px 30px -14px rgba(0,0,0,.28); }
+.shot { display: block; position: relative; }
+.shot img { display: block; width: 100%; height: auto; }
+.badge { position: absolute; left: 10px; top: 10px; background: rgba(255,255,255,.92); color: #191b1a; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.badge.up { background: var(--ink); color: var(--card); }
+.pcflag { position: absolute; right: 10px; top: 10px; background: rgba(25,27,26,.78); color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+.veil { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink); background: color-mix(in srgb, var(--bg) 55%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); font: 400 22px var(--display); }
+.cap { padding: 10px 14px 12px; }
+.cap h2 { font-size: 15px; margin: 0; line-height: 1.35; font-weight: 700; }
+.cap .sub { color: var(--muted); font-size: 12.5px; }
+/* Expand mode: the label grows out under the picture. */
+.more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.more > div { overflow: hidden; }
+.mode-expand .pin:hover .more, .mode-expand .pin:focus-within .more, .mode-expand .pin.open .more { grid-template-rows: 1fr; }
+.detail { padding: 0 14px 14px; display: grid; gap: 10px; }
+.detail p { margin: 0; font-size: 13.5px; color: var(--ink); opacity: .85; }
+.detail dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 12.5px; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.acts a { font-size: 13px; font-weight: 700; text-decoration: none; padding: 7px 14px; border-radius: 999px; background: var(--soft); color: var(--accent); }
+.acts a.primary { background: var(--accent); color: #fff; }
+/* Flip mode: the card turns over to show the same label on its back. */
+.back { display: none; }
+.mode-flip .face { transform-style: preserve-3d; display: grid; overflow: visible; background: transparent; box-shadow: none; }
+.mode-flip .front, .mode-flip .back { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: var(--card); }
+.mode-flip .back { display: grid; align-content: start; transform: rotateY(180deg); overflow: auto; padding-top: 14px; }
+.mode-flip .more { display: none; }
+.mode-flip .pin:hover .face, .mode-flip .pin:focus-within .face, .mode-flip .pin.open .face { transform: rotateY(180deg); }
+.mode-flip .back h2 { font-size: 16px; margin: 0 14px 6px; }
+.plus { break-inside: avoid; margin: 0 0 16px; display: grid; place-items: center; gap: 6px; text-align: center; aspect-ratio: 1; border: 2px dashed var(--line); border-radius: 16px; text-decoration: none; color: var(--muted); padding: 18px; }
+.plus b { font: 400 54px/1 var(--display); color: var(--accent); }
+.plus:hover { border-color: var(--accent); color: var(--ink); }
+.ideas { max-width: 720px; margin: 40px auto 56px; background: var(--card); border-radius: 22px; padding: clamp(20px, 4vw, 34px); }
+.ideas h2 { font: 400 32px/1.1 var(--display); margin: 0 0 8px; }
+.ideas > p { margin: 0 0 16px; color: var(--muted); }
+form { display: grid; gap: 12px; }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; }
+input, textarea { font: 400 16px/1.5 var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); padding: 10px 14px; width: 100%; border-radius: 12px; }
+textarea { min-height: 110px; resize: vertical; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.send { justify-self: start; font: 700 15px var(--body); background: var(--accent); color: #fff; border: 0; padding: 10px 24px; border-radius: 999px; cursor: pointer; }
+[data-form-status] { margin: 0; font-size: 14px; }
+[data-kind="ok"] { color: var(--accent); } [data-kind="error"] { color: #a33a2b; }
+@media (hover: none) { .mode-expand .more { grid-template-rows: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .face, .more { transition: none; } }
+</style>
+</head>
+<body data-hall="pinboard">
+<section class="intro"><h1 id="hall-title"></h1><p id="hall-count"></p></section>
+<div class="tools">
+  <div class="seg" role="group" aria-label="filter" id="filter"></div>
+  <span class="seg-label" id="mode-label"></span>
+  <div class="seg" role="group" aria-label="hover" id="mode"></div>
+</div>
+<main class="board mode-expand" id="board"></main>
+<section class="ideas" id="ideas" aria-labelledby="ideas-h">
+  <h2 id="ideas-h" data-t="formTitle"></h2>
+  <p data-t="formIntro"></p>
+  <form id="idea-form" novalidate>
+    <label for="f-title"><span data-t="fTitle"></span><input id="f-title" maxlength="100" autocomplete="off"></label>
+    <label for="f-desc"><span data-t="fDesc"></span><textarea id="f-desc" maxlength="2000"></textarea></label>
+    <label for="f-email"><span data-t="fEmail"></span><input id="f-email" type="email" autocomplete="email"></label>
+    <span class="hint" data-t="fEmailHint"></span>
+    <button class="send" type="submit" data-t="fSend"></button>
+    <p data-form-status hidden></p>
+    <span class="hint" data-t="privacy"></span>
+  </form>
+</section>
+
+<script src="shared.js"></script>
+<script>
+var filter = 'all', mode = 'expand';
+function seg(id, options, current, onPick) {
+  var box = document.getElementById(id);
+  box.innerHTML = options.map(function (o) { return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (o[0] === current) + '">' + o[1] + '</button>'; }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) { b.addEventListener('click', function () { onPick(b.getAttribute('data-v')); }); });
+}
+function render() {
+  var ko = VM.lang === 'ko';
+  document.getElementById('hall-title').textContent = ko ? '모든 전시품' : 'All works';
+  document.getElementById('hall-count').textContent = VM.counts();
+  seg('filter', [['all', ko ? '전체' : 'All'], ['live', VM.t('live')], ['upcoming', VM.t('upcoming')]], filter, function (v) { filter = v; render(); });
+  document.getElementById('mode-label').textContent = ko ? '마우스를 올리면' : 'On hover';
+  seg('mode', [['expand', ko ? '아래로 펼치기' : 'Open below'], ['flip', ko ? '뒤집기' : 'Turn over']], mode, function (v) { mode = v; render(); });
+  var board = document.getElementById('board');
+  board.className = 'board mode-' + mode;
+  var list = VM.exhibits().filter(function (e) { return filter === 'all' || e.status === filter; });
+  board.innerHTML = list.map(function (e) {
+    var live = e.status === 'live';
+    var rows = live ? [[VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)], [VM.t('stack'), e.stack.join(', ')], [VM.t('made'), VM.days(e.days)]] : [[VM.t('noted'), VM.date(e.noted)]];
+    var detail = '<div class="detail"><p>' + VM.pick(e.blurb) + '</p><dl>' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
+      (live ? '<div class="acts"><a class="primary" href="' + e.url + '" target="_blank" rel="noopener">' + VM.t('enter') + ' ↗</a><a href="' + e.repo + '" target="_blank" rel="noopener">' + VM.t('repo') + '</a></div>' : '') + '</div>';
+    var img = '<img src="' + e.thumb + '" alt="' + VM.name(e) + '" width="600" height="' + Math.round(600 / e.aspect) + '">';
+    var picture = live ? '<a class="shot" href="' + e.url + '" target="_blank" rel="noopener">' + img : '<div class="shot">' + (e.thumb ? img : '<div style="aspect-ratio:4/3;background:var(--line)"></div>') + '<div class="veil">' + VM.t('upcoming') + '</div>';
+    picture += '<span class="badge' + (live ? '' : ' up') + '">' + VM.t(live ? 'live' : 'upcoming') + '</span>' + (e.pcOnly ? '<span class="pcflag">' + VM.t('pcOnly') + '</span>' : '') + (live ? '</a>' : '</div>');
+    var cap = '<div class="cap"><h2>' + VM.name(e) + '</h2><div class="sub">' + (live ? e.version + ' · ' + VM.date(e.deployed) : VM.t('upcoming')) + '</div></div>';
+    return '<article class="pin" tabindex="0"><div class="face"><div class="front">' + picture + cap + '<div class="more"><div>' + detail + '</div></div></div>' +
+      '<div class="back"><h2>' + VM.name(e) + '</h2>' + detail + '</div></div></article>';
+  }).join('') + '<a class="plus" href="#ideas"><b>+</b><span>' + VM.t('formTitle') + '</span></a>';
+  Array.prototype.forEach.call(board.querySelectorAll('.pin'), function (pin) {
+    pin.addEventListener('click', function (ev) {
+      if (ev.target.closest('a')) return;
+      pin.classList.toggle('open');
+    });
+  });
+}
+VM.onLang(render);
+VM.wireForm(document.getElementById('idea-form'));
+VM.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Museum</title>
+<style>
+  body { margin: 0; background: #fbfbfa; color: #17181a; font: 400 15px/1.6 system-ui, sans-serif; padding: 32px 16px; }
+  @media (prefers-color-scheme: dark) { body { background: #141517; color: #ececea; } }
+  a { color: inherit; }
+  ul { padding-left: 20px; }
+</style>
+<script>
+  // The entrance opens the hall the visitor used last time, or the pinboard on a first visit.
+  (function () {
+    var halls = { pinboard: 'pinboard.html', hall: 'hall.html', catalogue: 'catalogue.html', night: 'night.html' };
+    var saved = null;
+    try { saved = localStorage.getItem('vm.hall'); } catch (e) { saved = null; }
+    location.replace(halls[saved] || halls.pinboard);
+  })();
+</script>
+</head>
+<body>
+<p>바이브 뮤지엄 · Vive Museum</p>
+<ul>
+  <li><a href="pinboard.html">핀보드 · Pinboard</a></li>
+  <li><a href="hall.html">3D 전시관 · Gallery Walk</a></li>
+  <li><a href="catalogue.html">전시 도록 · Catalogue</a></li>
+  <li><a href="night.html">야간 개장 · After Hours</a></li>
+</ul>
+</body>
+</html>

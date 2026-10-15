@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Museum · After Hours</title>
+<script>try{var m=localStorage.getItem('vm.mode');document.documentElement.setAttribute('data-mode',m==='dark'||m==='light'?m:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){document.documentElement.setAttribute('data-mode','light')}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gasoek+One&family=Nanum+Myeongjo:wght@400;700;800&display=swap">
+<style>
+/* Layout: big type and big pictures, one work per row. Dark mode is the museum after closing time, with an optional torch. */
+:root {
+  --night: #ecebe6;
+  --wall: #dedcd5;
+  --moon: #17181d;
+  --dim: #6a675e;
+  --gold: #8f6b1c;
+  --glass: rgba(0, 0, 0, .035);
+  --display: "Gasoek One", "Nanum Myeongjo", serif;
+  --body: "Nanum Myeongjo", Georgia, serif;
+  --soft: #3d3b36;
+  --edge: #cfccc3;
+  --field: #a9a69c;
+  --x: 50vw; --y: 40vh; --r: 230px;
+  color-scheme: light;
+}
+:root[data-mode="dark"] {
+  --night: #0a0b0f;
+  --wall: #14161d;
+  --moon: #ece6d4;
+  --dim: #8f8b7e;
+  --gold: #d9b45a;
+  --glass: rgba(236, 230, 212, .06);
+  --soft: #cfc9b8;
+  --edge: #2a2d36;
+  --field: #4a4c55;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; overflow-wrap: break-word; }
+html, body { margin: 0; }
+body { background: var(--night); color: var(--moon); font: 400 16px/1.75 var(--body); overflow-x: hidden; }
+.hero, .hint-light, .hall, .night-desk { margin-inline: clamp(16px, 5vw, 72px); }
+.hero { padding-top: 26px; }
+.night-desk { margin-bottom: 90px; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+.dark { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle var(--r) at var(--x) var(--y), rgba(10,11,15,0) 0, rgba(10,11,15,.35) 55%, rgba(10,11,15,.94) 100%); transition: opacity .6s; }
+body.lit .dark { opacity: 0; }
+.hero { display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap; position: relative; z-index: 6; }
+.closed { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
+h1 { font: 400 clamp(46px, 11vw, 150px)/.92 var(--display); margin: 10px 0 12px; letter-spacing: -0.01em; color: var(--moon); }
+.tag { margin: 0; color: var(--dim); max-width: 40ch; }
+.ctl { display: flex; gap: 10px; align-items: center; }
+.ctl button { font: 700 13px var(--body); background: transparent; color: var(--moon); border: 1px solid var(--dim); padding: 8px 14px; cursor: pointer; border-radius: 999px; }
+.ctl button[aria-pressed="true"] { background: var(--moon); color: var(--night); }
+.hint-light { color: var(--dim); font-size: 13px; margin: 16px 0 0; position: relative; z-index: 6; }
+.hall { margin-top: clamp(50px, 9vw, 120px); display: grid; gap: clamp(70px, 12vw, 160px); }
+.piece { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(22px, 4vw, 60px); align-items: center; }
+.piece:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.piece:nth-child(even) .canvas { order: 2; }
+.canvas { display: block; position: relative; padding: clamp(10px, 1.6vw, 18px); background: linear-gradient(145deg, #3a2f1a, #18130a); box-shadow: 0 0 0 1px #5b4a25, 0 50px 70px -40px #000; text-decoration: none; }
+.canvas img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.canvas::after { content: ""; position: absolute; inset: clamp(10px, 1.6vw, 18px); background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.08) 45%, transparent 55%); pointer-events: none; }
+.veil { aspect-ratio: 4 / 3; display: grid; place-items: center; background: var(--wall); border: 1px solid var(--edge); color: var(--dim); font: 400 22px var(--display); letter-spacing: .02em; text-align: center; padding: 12px; background-image: repeating-linear-gradient(90deg, transparent 0 46px, rgba(236,230,212,.03) 46px 48px); }
+.text { min-width: 0; }
+.text .no { font-size: 12px; letter-spacing: .3em; color: var(--gold); }
+.text h2 { font: 400 clamp(32px, 4.6vw, 58px)/1.02 var(--display); margin: 8px 0 14px; text-wrap: balance; }
+.text p { margin: 0 0 18px; color: var(--soft); max-width: 42ch; }
+.meta { display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; margin: 0 0 20px; font-size: 14px; }
+.meta dt { color: var(--dim); }
+.meta dd { margin: 0; }
+.pill { display: inline-block; font-size: 12px; letter-spacing: .12em; border: 1px solid var(--gold); color: var(--gold); padding: 1px 10px; border-radius: 999px; margin: 0 6px 12px 0; }
+.go { display: flex; gap: 18px; flex-wrap: wrap; font-weight: 800; }
+.go a { text-decoration: none; border-bottom: 1px solid var(--gold); padding-bottom: 2px; }
+.night-desk { margin-top: clamp(70px, 12vw, 160px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: clamp(22px, 5vw, 64px); }
+.night-desk h2 { font: 400 clamp(30px, 4vw, 48px)/1.05 var(--display); margin: 0 0 12px; }
+.night-desk > div > p { margin: 0; color: var(--soft); max-width: 40ch; }
+form { display: grid; gap: 14px; background: var(--glass); border: 1px solid var(--edge); padding: 22px; }
+label { display: grid; gap: 6px; font-size: 13px; color: var(--dim); letter-spacing: .06em; }
+input, textarea { font: 400 17px/1.5 var(--body); color: var(--moon); background: transparent; border: 0; border-bottom: 1px solid var(--field); padding: 6px 0; width: 100%; border-radius: 0; }
+textarea { min-height: 110px; resize: vertical; border: 1px solid var(--field); padding: 8px; }
+input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+.hint { font-size: 13px; color: var(--dim); }
+.send { justify-self: start; font: 800 15px var(--body); background: var(--gold); color: var(--night); border: 0; padding: 10px 24px; border-radius: 999px; cursor: pointer; }
+[data-form-status] { margin: 0; }
+[data-kind="ok"] { color: var(--gold); } [data-kind="error"] { color: #f19a86; }
+@media (max-width: 780px) {
+  .piece, .piece:nth-child(even), .night-desk { grid-template-columns: minmax(0, 1fr); }
+  .piece:nth-child(even) .canvas { order: 0; }
+  :root { --r: 170px; }
+}
+@media (prefers-reduced-motion: reduce) { .dark { transition: none; } }
+</style>
+</head>
+<body class="lit" data-hall="night">
+<div class="dark" aria-hidden="true"></div>
+<section class="hero">
+  <div>
+    <div class="closed" id="closed"></div>
+    <h1 data-t="site"></h1>
+    <p class="tag" data-t="tagline"></p>
+  </div>
+  <div class="ctl">
+    <button type="button" id="lights" aria-pressed="false"></button>
+  </div>
+</section>
+<p class="hint-light" id="hint-light" hidden></p>
+<main class="hall" id="hall"></main>
+<section class="night-desk" aria-labelledby="ideas-h">
+  <div><h2 id="ideas-h" data-t="formTitle"></h2><p data-t="formIntro"></p></div>
+  <form id="idea-form" novalidate>
+    <label for="f-title"><span data-t="fTitle"></span><input id="f-title" maxlength="100" autocomplete="off"></label>
+    <label for="f-desc"><span data-t="fDesc"></span><textarea id="f-desc" maxlength="2000"></textarea></label>
+    <label for="f-email"><span data-t="fEmail"></span><input id="f-email" type="email" autocomplete="email"></label>
+    <span class="hint" data-t="fEmailHint"></span>
+    <button class="send" type="submit" data-t="fSend"></button>
+    <p data-form-status hidden></p>
+    <span class="hint" data-t="privacy"></span>
+  </form>
+</section>
+
+<script src="shared.js"></script>
+<script>
+var root = document.documentElement;
+function aim(x, y) { root.style.setProperty('--x', x + 'px'); root.style.setProperty('--y', y + 'px'); }
+window.addEventListener('pointermove', function (ev) { if (ev.pointerType !== 'touch') aim(ev.clientX, ev.clientY); });
+window.addEventListener('pointerdown', function (ev) { aim(ev.clientX, ev.clientY); });
+var lights = document.getElementById('lights');
+lights.addEventListener('click', function () {
+  var torch = !document.body.classList.toggle('lit');
+  lights.setAttribute('aria-pressed', String(torch));
+  document.getElementById('hint-light').hidden = !torch;
+});
+function labels() {
+  var ko = VM.lang === 'ko';
+  lights.textContent = ko ? '손전등으로 보기' : 'Torch mode';
+  document.getElementById('closed').textContent = (VM.mode === 'dark' ? (ko ? '폐관 후 · 야간 관람' : 'After hours · Night visit') : (ko ? '낮 관람' : 'Day visit')) + ' · ' + VM.counts();
+  document.getElementById('hint-light').textContent = ko ? '손전등을 움직여 둘러보세요. 휴대폰에서는 비추고 싶은 곳을 누르세요.' : 'Move the torch to look around. On a phone, tap where you want to shine it.';
+}
+function render() {
+  labels();
+  var hall = document.getElementById('hall');
+  hall.innerHTML = VM.exhibits().map(function (e) {
+    var live = e.status === 'live';
+    var meta = live ? [[VM.t('stack'), e.stack.join(', ')], [VM.t('made'), VM.days(e.days)], [VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)]] : [[VM.t('noted'), VM.date(e.noted)]];
+    return '<article class="piece">' +
+      (live ? '<a class="canvas" href="' + e.url + '" target="_blank" rel="noopener"><img src="' + e.thumb + '" alt="' + VM.name(e) + '"></a>' : '<div class="veil">' + (VM.lang === 'ko' ? '천을 덮어 둔 작품' : 'Still under the dust sheet') + '</div>') +
+      '<div class="text"><div class="no">' + e.no + '</div><h2>' + VM.name(e) + '</h2>' +
+      '<span class="pill">' + VM.t(live ? 'live' : 'upcoming') + '</span>' + (e.pcOnly ? '<span class="pill">' + VM.t('pcOnly') + '</span>' : '') +
+      '<p>' + VM.pick(e.blurb) + '</p><dl class="meta">' + meta.map(function (m) { return '<dt>' + m[0] + '</dt><dd>' + m[1] + '</dd>'; }).join('') + '</dl>' +
+      (live ? '<div class="go"><a href="' + e.url + '" target="_blank" rel="noopener">' + VM.t('enter') + ' ↗</a><a href="' + e.repo + '" target="_blank" rel="noopener">' + VM.t('repo') + ' ↗</a></div>' : '') +
+      '</div></article>';
+  }).join('');
+  var first = hall.querySelector('.canvas');
+  if (first) { var r = first.getBoundingClientRect(); aim(r.left + r.width / 2, Math.min(r.top + r.height / 2, window.innerHeight * 0.6)); }
+}
+VM.onLang(render);
+VM.wireForm(document.getElementById('idea-form'));
+VM.start();
+</script>
+</body>
+</html>
