@@ -46,6 +46,7 @@
     },
     fRobot: { ko: '사람인지 확인하는 칸을 마쳐 주세요.', en: 'Please finish the human check.' },
     fBusy: { ko: '잠시 뒤에 다시 보내 주세요. 짧은 시간에 너무 많이 보냈습니다.', en: 'Too many ideas in a short time. Try again later.' },
+    fFull: { ko: '오늘은 아이디어를 더 받지 않습니다. 내일 다시 보내 주세요.', en: 'We are not taking more ideas today. Please try again tomorrow.' },
     fFail: { ko: '보내지 못했습니다. 잠시 뒤에 다시 시도해 주세요.', en: 'Could not send it. Please try again later.' },
     privacy: {
       ko: '받는 항목: 제목, 설명, 이메일(선택). 이메일은 구현 알림에만 쓰고, 알림을 보내면 지웁니다.',
@@ -285,7 +286,11 @@
         if (res.ok) {
           form.reset();
           say(email ? 'fThanksMail' : 'fThanks', true);
-        } else say(res.status === 429 ? 'fBusy' : res.status === 403 ? 'fRobot' : 'fFail', false);
+          return;
+        }
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          say(res.status === 429 ? (body.error === 'daily' ? 'fFull' : 'fBusy') : res.status === 403 ? 'fRobot' : 'fFail', false);
+        });
       }).catch(function () {
         say('fFail', false);
       }).then(function () {

@@ -1,7 +1,8 @@
 // Lambda entry: wires the idea app to DynamoDB, SES, SSM, GitHub and Turnstile. Uses only the AWS SDK that the
 // Node.js runtime already has, so the package is just these files.
 //
-// Environment (set by vive-infra): TABLE, OWNER_EMAIL, FROM_EMAIL, API_BASE, SITE_URL, ISSUE_REPO, PARAM_PREFIX.
+// Environment (set by vive-infra): TABLE, OWNER_EMAIL, FROM_EMAIL, API_BASE, SITE_URL, ISSUE_REPO, PARAM_PREFIX,
+// DAILY_LIMIT (ideas taken per day across the site; 50 when unset).
 // Parameters under PARAM_PREFIX: token-secret, turnstile-secret, github-token. "unset" counts as not set.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
@@ -96,5 +97,5 @@ const turnstile = {
 
 export const handler = makeApp({
   db, mail, github, turnstile, secrets,
-  config: { apiBase: env.API_BASE, siteUrl: env.SITE_URL, ownerEmail: env.OWNER_EMAIL, issueRepo: env.ISSUE_REPO },
+  config: { apiBase: env.API_BASE, siteUrl: env.SITE_URL, ownerEmail: env.OWNER_EMAIL, issueRepo: env.ISSUE_REPO, dailyLimit: Number(env.DAILY_LIMIT) || 0 },
 });

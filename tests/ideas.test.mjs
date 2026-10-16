@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { makeApp } from '../lambda/ideas/app.mjs';
 import { makeToken, readToken, reviewMail, validateIdea } from '../lambda/ideas/core.mjs';
 
-function setup({ turnstileSecret = 'ts', githubToken = 'gh', turnstileOk = true } = {}) {
+function setup({ turnstileSecret = 'ts', githubToken = 'gh', turnstileOk = true, dailyLimit = 0 } = {}) {
   const store = new Map();
   const sent = [];
   const issues = [];
@@ -21,7 +21,7 @@ function setup({ turnstileSecret = 'ts', githubToken = 'gh', turnstileOk = true 
     github: { async createIssue(issue) { issues.push(issue); return 40 + issues.length; } },
     turnstile: { async verify(token) { return turnstileOk && token === 'good'; } },
     secrets: async () => ({ tokenSecret: 'secret', turnstileSecret, githubToken }),
-    config: { apiBase: 'https://api.test', siteUrl: 'https://museum.test', ownerEmail: 'owner@x.io', issueRepo: 'BranKein/vive-museum' },
+    config: { apiBase: 'https://api.test', siteUrl: 'https://museum.test', ownerEmail: 'owner@x.io', issueRepo: 'BranKein/vive-museum', dailyLimit },
     now: () => clock,
     log: () => {},
   });
@@ -101,7 +101,7 @@ test('the issue never carries the email; the visitor confirms, then hears once w
   assert.equal(sent[2].to, 'v@x.io');
   assert.match(sent[2].subject, /built/);
   assert.match(sent[2].text, /Unsubscribe: https:\/\/api\.test\/unsubscribe/);
-  assert.equal(store.size, 1); // only the rate counter is left
+  assert.equal(store.size, 2); // only the visitor's rate counter and the day's counter are left
   assert.deepEqual(await app({ task: 'built', issues: [41] }), { sent: 0, skipped: 1 });
 });
 
@@ -170,4 +170,21 @@ test('the test review mail says it is a test', () => {
   assert.match(m.subject, /^\[Vive Museum\] 테스트 · 새 아이디어: 가짜$/);
   assert.match(m.text, /승인: https:\/\/api\.test\/review\?t=x&d=approve/);
   assert.match(m.html, /거절/);
+});
+
+test('stops taking ideas for the day once the site-wide limit is reached, without mail', async () => {
+  const { app, sent, store, tick } = setup({ dailyLimit: 3 });
+  for (let i = 0; i < 3; i += 1) {
+    const res = await app(post({ title: 'Idea ' + i, description: 'd', turnstileToken: 'good' }, '10.0.0.' + i));
+    assert.equal(res.statusCode, 202);
+  }
+  const mails = sent.length;
+  const full = await app(post({ title: 'One more', description: 'd', turnstileToken: 'good' }, '10.0.1.1'));
+  assert.equal(full.statusCode, 429);
+  assert.equal(JSON.parse(full.body).error, 'daily');
+  assert.equal(sent.length, mails);
+  assert.equal(ideas(store).length, 3);
+  tick(86400);
+  const next = await app(post({ title: 'Next day', description: 'd', turnstileToken: 'good' }, '10.0.1.1'));
+  assert.equal(next.statusCode, 202);
 });

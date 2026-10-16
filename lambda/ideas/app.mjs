@@ -8,7 +8,7 @@
 //   { task: 'built', issues: [n] }  from the museum deploy: tell visitors their idea is built, then forget them
 // GET only shows a page; the work happens on the page's POST, since mail scanners open links.
 import {
-  KEEP, LIMITS, actionPage, builtMail, confirmMail, copy, formOf, ideaBox, ipKey, issueOf, jsonOf, makeToken,
+  KEEP, LIMITS, actionPage, builtMail, confirmMail, copy, dayKey, formOf, ideaBox, ipKey, issueOf, jsonOf, makeToken,
   newId, newNonce, page, readToken, reviewMail, validateIdea,
 } from './core.mjs';
 
@@ -66,6 +66,12 @@ export function makeApp(deps) {
       if (!(await turnstile.verify(String(body.turnstileToken || ''), ip))) return json(403, { error: 'turnstile' });
     } else {
       log('turnstile secret not set; skipping the human check');
+    }
+    // A ceiling for the whole site, so a flood can never turn into a flood of mail (or a bill).
+    const perDay = config.dailyLimit || LIMITS.perDay;
+    if ((await db.increment(dayKey(t), t + 2 * 86400)) > perDay) {
+      log('daily idea limit reached', perDay);
+      return json(429, { error: 'daily' });
     }
 
     const idea = {

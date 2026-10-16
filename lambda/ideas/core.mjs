@@ -1,7 +1,12 @@
 // The parts of the idea function that need no AWS: checking input, signing links, and writing pages and mails.
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
-export const LIMITS = { title: 100, description: 2000, email: 254, perHour: 5 };
+export const LIMITS = { title: 100, description: 2000, email: 254, perHour: 5, perDay: 50 };
+
+/** Counter of ideas taken on one UTC day, across all visitors. */
+export function dayKey(now) {
+  return 'day#' + new Date(now * 1000).toISOString().slice(0, 10);
+}
 export const HOUR = 3600;
 export const DAY = 24 * HOUR;
 /** An unanswered idea is deleted after 30 days; an unconfirmed email after 24 hours. */
