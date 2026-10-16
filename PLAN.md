@@ -52,7 +52,7 @@
 - 썸네일: 저장소에 이미지가 있으면 그것, 없으면 배포 뒤 headless 브라우저로 찍는다.
 - 지금 `shared.js`에 직접 적힌 `EXHIBITS`를 빌드 때 만드는 데이터 파일로 바꾼다.
 
-### 3. 방문자 아이디어 (2026-10-16 v0.0.2로 켬. 하루 50건 상한, 월 5달러 예산 메일. 남은 것: Turnstile 키, 이슈용 GitHub 토큰, SES 샌드박스 해제)
+### 3. 방문자 아이디어 (2026-10-16 v0.0.2로 켬. 승인→이슈, 거절→삭제 확인. Turnstile 켬. 하루 50건 상한, 월 5달러 예산 메일. 남은 것: SES 샌드박스 해제 결과 기다림)
 
 - API Gateway + Lambda. 함수 코드는 이 저장소, AWS 자원은 vive-infra.
 - 받기: 제목, 설명, 이메일(선택). Cloudflare Turnstile, 요청 수 제한, 길이 제한.
@@ -62,7 +62,7 @@
 - 링크는 한 번만 쓰는 서명 토큰. 링크를 여는 것만으로는 처리하지 않고 확인 화면의 버튼으로 처리한다.
 - 보내는 주소 `noreply@yeonhyuk.me`. 입력 칸 아래 개인정보 안내.
 
-### 4. 배포 (2026-10-16 v0.0.1 배포함. https://vive-museum.yeonhyuk.me)
+### 4. 배포 (2026-10-16 v0.0.2. https://vive-museum.yeonhyuk.me, Cloudflare Web Analytics 켬)
 
 - 루트 `docs/deploy.md`의 구조대로: vive-infra에 `sites/vive-museum`(주소 `vive-museum.yeonhyuk.me`), 이 저장소에 `deploy/site.json`과 `.github/workflows/deploy.yml`.
 - Cloudflare Web Analytics 스크립트를 붙인다.
