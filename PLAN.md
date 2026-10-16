@@ -62,7 +62,7 @@
 - 링크는 한 번만 쓰는 서명 토큰. 링크를 여는 것만으로는 처리하지 않고 확인 화면의 버튼으로 처리한다.
 - 보내는 주소 `noreply@yeonhyuk.me`. 입력 칸 아래 개인정보 안내.
 
-### 4. 배포 (2026-10-16 인프라·워크플로 끝냄. 남은 것: Secrets 입력, v0.0.1 태그)
+### 4. 배포 (2026-10-16 v0.0.1 배포함. https://vive-museum.yeonhyuk.me)
 
 - 루트 `docs/deploy.md`의 구조대로: vive-infra에 `sites/vive-museum`(주소 `vive-museum.yeonhyuk.me`), 이 저장소에 `deploy/site.json`과 `.github/workflows/deploy.yml`.
 - Cloudflare Web Analytics 스크립트를 붙인다.
