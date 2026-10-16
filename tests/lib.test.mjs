@@ -86,7 +86,7 @@ const PROJECT = {
   thumb: 'img/exhibits/warehouse-tycoon.jpg',
 };
 
-test('buildExhibits: live from the projects, upcoming from the ideas, the museum left out', () => {
+test('buildExhibits: live from the projects (the museum too), upcoming from the ideas', () => {
   const ideas = [
     parseIdea('periodic.md', IDEA),
     parseIdea('museum.md', '# 박물관\n\n- 상태: 구현 중\n- 작성일: 2026-10-12\n- 저장소: https://github.com/BranKein/vive-museum\n'),
@@ -97,24 +97,26 @@ test('buildExhibits: live from the projects, upcoming from the ideas, the museum
   const projects = [
     PROJECT,
     { owner: 'BranKein', repo: 'vive-infra', exhibit: null },
-    { owner: 'BranKein', repo: 'vive-museum', exhibit: { title: 'M' }, site: { subdomain: 'vive-museum' }, version: 'v0.0.1' },
+    { owner: 'BranKein', repo: 'vive-museum', exhibit: { title: 'M' }, site: { subdomain: 'vive-museum' }, version: 'v0.0.3', deployed: '2026-10-16', started: '2026-10-15' },
     { owner: 'BranKein', repo: 'vive-untagged', exhibit: { title: 'U' }, site: { subdomain: 'u' }, version: null },
   ];
-  const list = buildExhibits({ projects, ideas, self: 'vive-museum' });
-  assert.deepEqual(list.map((e) => e.id), ['warehouse-tycoon', 'later', 'periodic']);
-  const [live] = list;
+  const list = buildExhibits({ projects, ideas });
+  assert.deepEqual(list.map((e) => e.id), ['museum', 'warehouse-tycoon', 'later', 'periodic']);
+  assert.equal(list[0].url, 'https://vive-museum.yeonhyuk.me');
+  assert.equal(list[0].no, 'VM-004');
+  const live = list[1];
   assert.equal(live.url, 'https://warehouse-tycoon.yeonhyuk.me');
   assert.equal(live.repo, 'https://github.com/BranKein/vive-warehouse-tycoon');
   assert.equal(live.days, 3);
   assert.equal(live.aspect, 4 / 3);
   assert.equal(live.no, 'VM-001');
-  assert.equal(list[2].no, 'VM-002');
-  assert.equal(list[1].no, 'VM-003');
-  assert.deepEqual(list[2].title, { ko: '주기적 코딩 문제', en: 'Problem of the Week' });
+  assert.equal(list[3].no, 'VM-002');
+  assert.equal(list[2].no, 'VM-003');
+  assert.deepEqual(list[3].title, { ko: '주기적 코딩 문제', en: 'Problem of the Week' });
 });
 
 test('buildExhibits: a project without v1.0.0 counts days to its latest release', () => {
-  const [e] = buildExhibits({ projects: [{ ...PROJECT, firstRelease: null }], ideas: [], self: 'vive-museum' });
+  const [e] = buildExhibits({ projects: [{ ...PROJECT, firstRelease: null }], ideas: [] });
   assert.equal(e.days, 4);
 });
 

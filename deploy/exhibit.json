@@ -1,0 +1,11 @@
+{
+  "title": { "ko": "바이브 뮤지엄", "en": "Vive Museum" },
+  "blurb": {
+    "ko": "바이브 코딩으로 만든 것들을 모아 둔 작은 박물관. 지금 보고 있는 이곳이다. 같은 전시품을 핀보드, 3D 전시관, 전시 도록, 야간 개장 네 가지 전시관으로 보여 준다.",
+    "en": "A small museum of things made by vibe coding, the one you are in now. It shows the same exhibits in four halls: a pinboard, a 3D gallery, a catalogue and a night opening."
+  },
+  "stack": ["JavaScript", "Three.js", "AWS Lambda"],
+  "thumbnail": "deploy/thumbnail.jpg",
+  "aspect": "4:3",
+  "pcOnly": false
+}

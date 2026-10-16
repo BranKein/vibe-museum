@@ -12,7 +12,6 @@ import { buildExhibits, builtIssues, latestVersionTag, parseGitmodules, parseIde
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOT_REPO = process.env.ROOT_REPO || 'BranKein/vive-coding-playground';
-const SELF = process.env.MUSEUM_REPO || 'vive-museum';
 const API = 'https://api.github.com';
 
 function headers(raw) {
@@ -50,7 +49,6 @@ async function firstCommitDate(owner, repo) {
 }
 
 async function project({ owner, repo }, thumbDir) {
-  if (repo === SELF) return { owner, repo, exhibit: null };
   const exhibitText = await fileOf(owner, repo, 'deploy/exhibit.json');
   if (!exhibitText) return { owner, repo, exhibit: null };
   const exhibit = JSON.parse(exhibitText);
@@ -103,7 +101,7 @@ export async function collect() {
   const projects = [];
   for (const r of repos) projects.push(await project(r, thumbDir));
   const ideas = root.ideas.map(([f, text]) => parseIdea(f, text));
-  const exhibits = buildExhibits({ projects, ideas, self: SELF });
+  const exhibits = buildExhibits({ projects, ideas });
 
   await writeFile(join(HERE, 'data', 'exhibits.js'), '/* Made by scripts/collect.mjs. Do not edit. */\nwindow.VM_EXHIBITS = ' + JSON.stringify(exhibits, null, 2) + ';\n');
   await writeFile(join(HERE, 'data', 'built-issues.json'), JSON.stringify(builtIssues(ideas)) + '\n');

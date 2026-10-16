@@ -97,13 +97,13 @@ export function aspectOf(value) {
  * Builds the list the halls draw.
  * projects: [{ owner, repo, exhibit, site, version, deployed, started, firstRelease, thumb }] from the submodules
  *   (exhibit is the parsed deploy/exhibit.json or null; version null if never tagged).
- * ideas: parseIdea() results. self: repo name of the museum, never shown.
+ * ideas: parseIdea() results. The museum itself is shown like any other project.
  */
-export function buildExhibits({ projects, ideas, self, domain = 'yeonhyuk.me' }) {
+export function buildExhibits({ projects, ideas, domain = 'yeonhyuk.me' }) {
   const live = [];
   const shownRepos = new Set();
   for (const p of projects) {
-    if (p.repo === self || !p.exhibit || !p.version || !p.site || !p.site.subdomain) continue;
+    if (!p.exhibit || !p.version || !p.site || !p.site.subdomain) continue;
     const ex = p.exhibit;
     shownRepos.add(p.repo.toLowerCase());
     live.push({
@@ -125,7 +125,7 @@ export function buildExhibits({ projects, ideas, self, domain = 'yeonhyuk.me' })
   }
   const upcoming = ideas
     .filter((i) => i.kind === 'upcoming')
-    .filter((i) => !i.repo || (i.repo.repo !== self && !shownRepos.has(i.repo.repo.toLowerCase())))
+    .filter((i) => !i.repo || !shownRepos.has(i.repo.repo.toLowerCase()))
     .map((i) => ({
       id: i.file.replace(/\.md$/, ''),
       status: 'upcoming',
