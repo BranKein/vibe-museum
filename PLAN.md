@@ -52,7 +52,7 @@
 - 썸네일: 저장소에 이미지가 있으면 그것, 없으면 배포 뒤 headless 브라우저로 찍는다.
 - 지금 `shared.js`에 직접 적힌 `EXHIBITS`를 빌드 때 만드는 데이터 파일로 바꾼다.
 
-### 3. 방문자 아이디어 (2026-10-16 코드 끝냄. 남은 것: bootstrap apply → vive-infra#3 병합, 비밀 값, 테스트 메일)
+### 3. 방문자 아이디어 (2026-10-16 v0.0.2로 켬. 하루 50건 상한, 월 5달러 예산 메일. 남은 것: Turnstile 키, 이슈용 GitHub 토큰, SES 샌드박스 해제)
 
 - API Gateway + Lambda. 함수 코드는 이 저장소, AWS 자원은 vive-infra.
 - 받기: 제목, 설명, 이메일(선택). Cloudflare Turnstile, 요청 수 제한, 길이 제한.
