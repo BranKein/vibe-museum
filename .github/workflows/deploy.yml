@@ -65,6 +65,8 @@ jobs:
           CI: "true"
           GITHUB_TOKEN: ${{ github.token }}
           CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
           IDEAS_API_URL: ${{ vars.IDEAS_API_URL }}
           TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
         run: npm run build
