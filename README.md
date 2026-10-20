@@ -27,7 +27,7 @@ python3 -m http.server 5191
 ```
 
 - `npm test`: 전시 목록 만들기, 빌드, 아이디어 함수의 테스트
-- `npm run build`: `dist/`를 만든다(collect 포함). 환경 변수 `CF_BEACON_TOKEN`(Cloudflare Web Analytics), `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `SITE_URL`, `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`은 모두 선택
+- `npm run build`: `dist/`를 만든다(collect 포함). 환경 변수 `CF_BEACON_TOKEN`(Cloudflare Web Analytics), `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `SITE_URL`, `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`, `ADSENSE_CLIENT`, `ADSENSE_SLOT_INFEED`, `ADSENSE_SLOT_DISPLAY`는 모두 선택
 
 ## 전시 목록
 
@@ -57,7 +57,7 @@ python3 -m http.server 5191
 
 - 다른 프로젝트가 배포를 마치면 `repository_dispatch`(`exhibit-updated`)를 보내고, 이 워크플로가 가장 최근 태그를 새 전시 데이터로 다시 빌드·배포한다. 매일 아침(06:17 KST)과 수동 실행도 같다. 첫 태그 전에는 아무것도 하지 않는다.
 - Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`(IAM 사용자 `deploy-vive-museum`), `INFRA_REPO_TOKEN`
-- Variables: `AWS_REGION`, `S3_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`(설정됨). 선택: `CF_BEACON_TOKEN`, `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`, `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `IDEAS_FUNCTION_NAME`
+- Variables: `AWS_REGION`, `S3_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`(설정됨). 선택: `CF_BEACON_TOKEN`, `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`, `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `IDEAS_FUNCTION_NAME`, `ADSENSE_CLIENT`, `ADSENSE_SLOT_INFEED`, `ADSENSE_SLOT_DISPLAY`
 - 링크 미리보기: 모든 페이지에 Open Graph 태그(`img/og.png`), 전시품마다 `e/<id>.html`.
 
 ## 검색 노출 (SEO)
@@ -70,6 +70,17 @@ python3 -m http.server 5191
 - `robots.txt`(모두 허용, 사이트맵 주소)와 `sitemap.xml`(네 전시관, 빌드한 날짜).
 - 공유 페이지 `e/<id>.html`은 `noindex`(미리보기 태그는 그대로).
 - 소유 확인: Variables `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`에 값을 넣으면 모든 페이지에 확인용 meta 태그가 붙는다(URL 접두어 방식). 비어 있으면 태그도 없다.
+
+## 광고 (AdSense)
+
+저장소 Variables가 있을 때만 붙는다. 하나도 없으면 빌드 결과의 페이지와 `config.js`가 광고를 넣기 전과 똑같다.
+
+- `ADSENSE_CLIENT`: 게시자 ID(`ca-pub-…`, `pub-…`도 받아 `ca-pub-…`로 맞춘다). 있으면 핀보드·전시 도록·야간 개장의 `<head>`에 AdSense 스크립트가 붙고(사이트 확인에도 쓰인다), `config.js`에 `adsenseClient`와 `adsenseSlots`가 들어간다.
+- `ADSENSE_SLOT_INFEED`: 핀보드의 광고 카드. 세 번째 전시품 뒤(그보다 적으면 마지막 전시품 뒤)에 카드 모양으로 들어간다.
+- `ADSENSE_SLOT_DISPLAY`: 전시 도록과 야간 개장의 본문 아래, 꼬리말 위의 가로 상자.
+- 광고 자리는 게시자 ID와 그 자리의 광고 단위 ID가 모두 있을 때만 생긴다. 모두 "광고 · Ad" 표시가 붙는다. 그리기는 `shared.js`(`ads()`)가 한다.
+- 3D 전시관, 입구(`index.html`), 공유 페이지에는 광고가 없다.
+- 광고가 채워지지 않거나(`data-ad-status="unfilled"`) 광고 차단기로 스크립트가 막히면 상자를 숨긴다.
 
 ## 방문자 아이디어 함수
 
