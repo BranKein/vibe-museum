@@ -11,6 +11,9 @@
 //   NAVER_SITE_VERIFICATION  Naver Search Advisor meta tag value; no tag without it
 //   IDEAS_API_URL       visitor idea API; without it the form only shows a note, as before
 //   TURNSTILE_SITE_KEY  Cloudflare Turnstile site key for the idea form
+//   ADSENSE_CLIENT       AdSense publisher id (ca-pub-… or pub-…); no ad script or slots without it
+//   ADSENSE_SLOT_INFEED  ad unit id for the in-feed card on the pinboard
+//   ADSENSE_SLOT_DISPLAY ad unit id for the box under the catalogue and the night hall
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -117,6 +120,27 @@ export function verificationTags(env) {
   return tags.join('\n');
 }
 
+// The pages that carry an ad slot. The 3D hall, the entrance and the share pages never do.
+export const AD_PAGES = ['pinboard.html', 'catalogue.html', 'night.html'];
+
+/** The AdSense publisher id as ca-pub-<digits>, or '' when it is unset or not an id. */
+export function adsenseClient(env) {
+  const m = /^(?:ca-)?pub-(\d{10,20})$/.exec((env.ADSENSE_CLIENT || '').trim());
+  return m ? 'ca-pub-' + m[1] : '';
+}
+
+/** An ad unit id (digits only), or '' when it is unset or not an id. */
+export function adSlot(value) {
+  const v = (value || '').trim();
+  return /^\d{5,20}$/.test(v) ? v : '';
+}
+
+/** The AdSense loader for a page with an ad slot; '' without a publisher id. */
+export function adsenseTag(env) {
+  const client = adsenseClient(env);
+  return client ? '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + client + '" crossorigin="anonymous"></script>' : '';
+}
+
 /** The head tags for one page. */
 export function pageHead(page, siteUrl, extra) {
   const meta = PAGE_META[page];
@@ -139,6 +163,11 @@ export function sitemapXml(siteUrl, date) {
 /** window.VM_CONFIG for the pages. */
 export function configScript(env) {
   const config = { ideasApi: (env.IDEAS_API_URL || '').replace(/\/+$/, ''), turnstileSiteKey: env.TURNSTILE_SITE_KEY || '' };
+  const client = adsenseClient(env);
+  if (client) {
+    config.adsenseClient = client;
+    config.adsenseSlots = { infeed: adSlot(env.ADSENSE_SLOT_INFEED), display: adSlot(env.ADSENSE_SLOT_DISPLAY) };
+  }
   return '/* Made by scripts/build.mjs from the environment. */\nwindow.VM_CONFIG = ' + JSON.stringify(config) + ';\n';
 }
 
@@ -151,6 +180,17 @@ export function sharePage(exhibit, siteUrl, beacon) {
     '<title>' + esc(title) + '</title>\n' + ogTags({ title, description, url: siteUrl + '/e/' + exhibit.id + '.html', image }) + '\n' +
     '<meta name="robots" content="noindex">\n<meta http-equiv="refresh" content="0; url=../index.html">\n' + beacon + '\n</head>\n<body>\n' +
     '<p><a href="../index.html">Vive Museum</a> · <a href="' + esc(exhibit.url) + '">' + esc(exhibit.title.en) + '</a></p>\n</body>\n</html>\n';
+}
+
+/** One page as built: its title, the plain exhibit list and the head tags (plus the ad loader where a page has a slot). */
+export function renderPage(page, source, exhibits, env, siteUrl) {
+  let html = setTitle(source, PAGE_META[page].title);
+  let extra = [verificationTags(env), analyticsTag(env.CF_BEACON_TOKEN), AD_PAGES.includes(page) ? adsenseTag(env) : ''].filter(Boolean).join('\n');
+  if (LIST_SLOT[page]) {
+    html = fill(html, LIST_SLOT[page], staticList(exhibits));
+    extra = LIST_STYLE + (page === 'pinboard.html' ? '\n' + jsonLd(exhibits, siteUrl) : '') + (extra ? '\n' + extra : '');
+  }
+  return inject(html, pageHead(page, siteUrl, extra));
 }
 
 export async function build({ collectFirst = true, env = process.env } = {}) {
@@ -173,15 +213,8 @@ export async function build({ collectFirst = true, env = process.env } = {}) {
   const exhibits = globalThis.window.VM_EXHIBITS || [];
   delete globalThis.window;
 
-  const common = [verificationTags(env), beacon].filter(Boolean).join('\n');
   for (const page of PAGES) {
-    let html = setTitle(await readFile(join(HERE, page), 'utf8'), PAGE_META[page].title);
-    let extra = common;
-    if (LIST_SLOT[page]) {
-      html = fill(html, LIST_SLOT[page], staticList(exhibits));
-      extra = LIST_STYLE + (page === 'pinboard.html' ? '\n' + jsonLd(exhibits, siteUrl) : '') + (extra ? '\n' + extra : '');
-    }
-    await writeFile(join(DIST, page), inject(html, pageHead(page, siteUrl, extra)));
+    await writeFile(join(DIST, page), renderPage(page, await readFile(join(HERE, page), 'utf8'), exhibits, env, siteUrl));
   }
   await writeFile(join(DIST, 'robots.txt'), robotsTxt(siteUrl));
   await writeFile(join(DIST, 'sitemap.xml'), sitemapXml(siteUrl, new Date().toISOString().slice(0, 10)));

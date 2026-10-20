@@ -228,6 +228,102 @@
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') openThemes(false); });
   }
 
+  /*
+   * Ads (AdSense). Only when config.js has a publisher id and the slot's ad unit id, which the build writes from
+   * ADSENSE_* variables; otherwise nothing here runs. The pinboard gets one in-feed card among the exhibit cards,
+   * the catalogue and the night hall one box above the footer. The 3D hall and the entrance never get ads.
+   */
+  var AD_CSS = [
+    '.vm-ad{display:block;font:400 11px/1.4 "IBM Plex Sans KR",system-ui,sans-serif}',
+    '.vm-ad-label{display:block;margin:0 0 6px;font-size:11px;letter-spacing:.06em;opacity:.62}',
+    '.vm-ad ins.adsbygoogle{display:block;min-height:100px}',
+    '.vm-ad:has(ins[data-ad-status="unfilled"]){display:none}',
+    '.board>.vm-ad{break-inside:avoid;margin:0 0 16px;padding:10px 12px 12px;border-radius:16px;background:var(--card,transparent);color:var(--muted,inherit);border:1px dashed var(--line,currentColor);overflow:hidden}',
+    '.board>.vm-ad ins.adsbygoogle{min-height:250px}',
+    '.vm-ad-wrap{position:relative;z-index:6;margin:0 var(--vm-ad-gutter,16px) 40px}',
+    '.vm-ad-display{max-width:var(--vm-ad-max,none);margin:0 auto;padding:10px 12px 12px;border-radius:6px;border:1px solid color-mix(in srgb,currentColor 16%,transparent);background:color-mix(in srgb,currentColor 3%,transparent)}',
+  ].join('');
+  // Where the box under the content sits, matching each page's content column.
+  var AD_BOX = {
+    catalogue: { gutter: 'clamp(16px, 4vw, 48px)', max: '1180px' },
+    night: { gutter: 'clamp(16px, 5vw, 72px)', max: 'none' },
+  };
+  function adSlotId(kind) {
+    var slots = CONFIG.adsenseSlots || {};
+    return CONFIG.adsenseClient && slots[kind] ? String(slots[kind]) : '';
+  }
+  function adNode(tag, className, slot) {
+    var box = document.createElement(tag);
+    box.className = 'vm-ad ' + className;
+    box.setAttribute('aria-label', '광고 · Ad');
+    var label = document.createElement('span');
+    label.className = 'vm-ad-label';
+    label.textContent = '광고 · Ad';
+    var ins = document.createElement('ins');
+    ins.className = 'adsbygoogle';
+    ins.style.display = 'block';
+    ins.setAttribute('data-ad-client', CONFIG.adsenseClient);
+    ins.setAttribute('data-ad-slot', slot);
+    ins.setAttribute('data-ad-format', 'auto');
+    ins.setAttribute('data-full-width-responsive', 'true');
+    box.appendChild(label);
+    box.appendChild(ins);
+    return box;
+  }
+  /** Asks AdSense to fill each new <ins> once; never one it already filled or was already asked about. */
+  function fillAds(root) {
+    Array.prototype.forEach.call(root.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status]):not([data-vm-pushed])'), function (ins) {
+      ins.setAttribute('data-vm-pushed', '');
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* blocked or not ready: the box stays empty */ }
+    });
+  }
+  function ads() {
+    if (!CONFIG.adsenseClient) return;
+    var hall = document.body.getAttribute('data-hall');
+    var made = false;
+    var board = hall === 'pinboard' && document.getElementById('board');
+    var infeed = adSlotId('infeed');
+    if (board && infeed) {
+      // The pinboard redraws its cards with innerHTML (filters, language, hover mode), which drops the card.
+      // After each redraw a fresh card goes in after the third exhibit (or the last one), and only it is filled.
+      var place = function () {
+        if (board.querySelector(':scope > .vm-ad')) return;
+        var pins = board.querySelectorAll(':scope > .pin');
+        var card = adNode('aside', 'vm-ad-feed', infeed);
+        var after = pins[Math.min(3, pins.length) - 1];
+        if (after) board.insertBefore(card, after.nextSibling);
+        else board.insertBefore(card, board.firstChild);
+        fillAds(card);
+      };
+      place();
+      new MutationObserver(place).observe(board, { childList: true });
+      made = true;
+    }
+    var display = adSlotId('display');
+    var where = AD_BOX[hall];
+    var foot = document.querySelector('.vm-foot');
+    if (where && display && foot) {
+      var wrap = document.createElement('div');
+      wrap.className = 'vm-ad-wrap';
+      wrap.style.setProperty('--vm-ad-gutter', where.gutter);
+      wrap.style.setProperty('--vm-ad-max', where.max);
+      wrap.appendChild(adNode('aside', 'vm-ad-display', display));
+      foot.parentNode.insertBefore(wrap, foot);
+      fillAds(wrap);
+      made = true;
+    }
+    if (!made) return;
+    var style = document.createElement('style'); style.textContent = AD_CSS; document.head.appendChild(style);
+    // If an ad blocker stopped the AdSense script, take the empty boxes away again.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (window.adsbygoogle && window.adsbygoogle.loaded) return;
+        Array.prototype.forEach.call(document.querySelectorAll('.vm-ad'), function (box) { box.style.display = 'none'; });
+        var css = document.createElement('style'); css.textContent = '.vm-ad{display:none!important}'; document.head.appendChild(css);
+      }, 4000);
+    });
+  }
+
   var turnstileLoading = null;
   function loadTurnstile() {
     if (!turnstileLoading) {
@@ -322,7 +418,7 @@
     get mode() { return mode; },
     themes: THEMES,
     savedHall: function () { return read('vm.hall'); },
-    start: function () { chrome(); apply(); },
+    start: function () { chrome(); apply(); ads(); },
     wireForm: wireForm,
   };
 })();
