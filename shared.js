@@ -76,7 +76,7 @@
   var listeners = [];
   /** The four ways to walk the museum. Each is its own page. */
   var THEMES = [
-    { id: 'pinboard', file: 'pinboard.html', name: { ko: '핀보드', en: 'Pinboard' }, desc: { ko: '썸네일을 엇갈려 쌓은 벽. 마우스를 올리면 설명이 펼쳐집니다.', en: 'A wall of staggered thumbnails that open up as you hover.' } },
+    { id: 'pinboard', file: 'pinboard.html', name: { ko: '핀보드', en: 'Pinboard' }, desc: { ko: '썸네일을 엇갈려 쌓은 벽. 마우스를 올리면 카드가 뒤집혀 설명이 나옵니다.', en: 'A wall of staggered thumbnails that turn over as you hover.' } },
     { id: 'hall', file: 'hall.html', name: { ko: '3D 전시관', en: 'Gallery Walk' }, desc: { ko: '복도를 걸으며 액자 옆 안내판에서 들어갑니다.', en: 'Walk the corridor and step in from the label beside each work.' } },
     { id: 'catalogue', file: 'catalogue.html', name: { ko: '전시 도록', en: 'Catalogue' }, desc: { ko: '한 장씩 넘기는 도록. 아래 띠에 모든 페이지가 있습니다.', en: 'A book of plates, with every page in a strip below.' } },
     { id: 'night', file: 'night.html', name: { ko: '야간 개장', en: 'After Hours' }, desc: { ko: '큰 글씨와 큰 그림의 전시실. 손전등으로 둘러볼 수도 있습니다.', en: 'Big type and big pictures, with an optional torch.' } },
@@ -238,8 +238,8 @@
     '.vm-ad-label{display:block;margin:0 0 6px;font-size:11px;letter-spacing:.06em;opacity:.62}',
     '.vm-ad ins.adsbygoogle{display:block;min-height:100px}',
     '.vm-ad:has(ins[data-ad-status="unfilled"]){display:none}',
-    '.board>.vm-ad{break-inside:avoid;margin:0 0 16px;padding:10px 12px 12px;border-radius:16px;background:var(--card,transparent);color:var(--muted,inherit);border:1px dashed var(--line,currentColor);overflow:hidden}',
-    '.board>.vm-ad ins.adsbygoogle{min-height:250px}',
+    '.board .vm-ad{margin:0 0 16px;padding:10px 12px 12px;border-radius:16px;background:var(--card,transparent);color:var(--muted,inherit);border:1px dashed var(--line,currentColor);overflow:hidden}',
+    '.board .vm-ad ins.adsbygoogle{min-height:250px}',
     '.vm-ad-wrap{position:relative;z-index:6;margin:0 var(--vm-ad-gutter,16px) 40px}',
     '.vm-ad-display{max-width:var(--vm-ad-max,none);margin:0 auto;padding:10px 12px 12px;border-radius:6px;border:1px solid color-mix(in srgb,currentColor 16%,transparent);background:color-mix(in srgb,currentColor 3%,transparent)}',
   ].join('');
@@ -285,14 +285,16 @@
     var infeed = adSlotId('infeed');
     if (board && infeed) {
       // The pinboard redraws its cards with innerHTML (filters, language, hover mode), which drops the card.
-      // After each redraw a fresh card goes in after the third exhibit (or the last one), and only it is filled.
+      // After each redraw a fresh card goes in under the third exhibit (or the last one), in its column, and only it is filled.
       var place = function () {
-        if (board.querySelector(':scope > .vm-ad')) return;
-        var pins = board.querySelectorAll(':scope > .pin');
+        if (board.querySelector('.vm-ad')) return;
+        var pins = board.querySelectorAll('.pin');
         var card = adNode('aside', 'vm-ad-feed', infeed);
-        var after = pins[Math.min(3, pins.length) - 1];
-        if (after) board.insertBefore(card, after.nextSibling);
-        else board.insertBefore(card, board.firstChild);
+        var after = board.querySelector('.pin[data-i="' + (Math.min(3, pins.length) - 1) + '"]');
+        var col = board.querySelector('.col');
+        if (after) after.parentNode.insertBefore(card, after.nextSibling);
+        else if (col) col.insertBefore(card, col.firstChild);
+        else return;
         fillAds(card);
       };
       place();

@@ -47,8 +47,10 @@ a { color: inherit; }
 .seg button { font: 500 13px var(--body); border: 0; background: none; color: var(--muted); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
 .seg-label { font-size: 13px; color: var(--muted); }
-.board { columns: 4 250px; column-gap: 16px; }
-.pin { break-inside: avoid; margin: 0 0 16px; position: relative; perspective: 1200px; }
+/* Cards are dealt into columns left to right, row by row, so an opened card only pushes down the ones under it. */
+.board { display: flex; gap: 16px; align-items: flex-start; }
+.col { flex: 1; min-width: 0; }
+.pin { margin: 0 0 16px; position: relative; perspective: 1200px; }
 .face { background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: box-shadow .25s, transform .5s cubic-bezier(.3,.7,.2,1); }
 .pin:hover .face, .pin:focus-within .face, .pin.open .face { box-shadow: 0 14px 30px -14px rgba(0,0,0,.28); }
 .shot { display: block; position: relative; }
@@ -80,7 +82,7 @@ a { color: inherit; }
 .mode-flip .more { display: none; }
 .mode-flip .pin:hover .face, .mode-flip .pin:focus-within .face, .mode-flip .pin.open .face { transform: rotateY(180deg); }
 .mode-flip .back h2 { font-size: 16px; margin: 0 14px 6px; }
-.plus { break-inside: avoid; margin: 0 0 16px; display: grid; place-items: center; gap: 6px; text-align: center; aspect-ratio: 1; border: 2px dashed var(--line); border-radius: 16px; text-decoration: none; color: var(--muted); padding: 18px; }
+.plus { margin: 0 0 16px; display: grid; place-items: center; gap: 6px; text-align: center; aspect-ratio: 1; border: 2px dashed var(--line); border-radius: 16px; text-decoration: none; color: var(--muted); padding: 18px; }
 .plus b { font: 400 54px/1 var(--display); color: var(--accent); }
 .plus:hover { border-color: var(--accent); color: var(--ink); }
 .ideas { max-width: 720px; margin: 40px auto 56px; background: var(--card); border-radius: 22px; padding: clamp(20px, 4vw, 34px); }
@@ -106,7 +108,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
   <span class="seg-label" id="mode-label"></span>
   <div class="seg" role="group" aria-label="hover" id="mode"></div>
 </div>
-<main class="board mode-expand" id="board"></main>
+<main class="board mode-flip" id="board"></main>
 <section class="ideas" id="ideas" aria-labelledby="ideas-h">
   <h2 id="ideas-h" data-t="formTitle"></h2>
   <p data-t="formIntro"></p>
@@ -125,7 +127,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
 <script src="data/exhibits.js"></script>
 <script src="shared.js"></script>
 <script>
-var filter = 'all', mode = 'expand';
+var filter = 'all', mode = 'flip', cards = [], cols = 0;
 function seg(id, options, current, onPick) {
   var box = document.getElementById(id);
   box.innerHTML = options.map(function (o) { return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (o[0] === current) + '">' + o[1] + '</button>'; }).join('');
@@ -137,11 +139,11 @@ function render() {
   document.getElementById('hall-count').textContent = VM.counts();
   seg('filter', [['all', ko ? '전체' : 'All'], ['live', VM.t('live')], ['upcoming', VM.t('upcoming')]], filter, function (v) { filter = v; render(); });
   document.getElementById('mode-label').textContent = ko ? '마우스를 올리면' : 'On hover';
-  seg('mode', [['expand', ko ? '아래로 펼치기' : 'Open below'], ['flip', ko ? '뒤집기' : 'Turn over']], mode, function (v) { mode = v; render(); });
+  seg('mode', [['flip', ko ? '뒤집기' : 'Turn over'], ['expand', ko ? '아래로 펼치기' : 'Open below']], mode, function (v) { mode = v; render(); });
   var board = document.getElementById('board');
   board.className = 'board mode-' + mode;
   var list = VM.exhibits().filter(function (e) { return filter === 'all' || e.status === filter; });
-  board.innerHTML = list.map(function (e) {
+  cards = list.map(function (e, i) {
     var live = e.status === 'live';
     var rows = live ? [[VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)], [VM.t('stack'), e.stack.join(', ')], [VM.t('made'), VM.days(e.days)]] : [[VM.t('noted'), VM.date(e.noted)]];
     var detail = '<div class="detail"><p>' + VM.pick(e.blurb) + '</p><dl>' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
@@ -150,16 +152,27 @@ function render() {
     var picture = live ? '<a class="shot" href="' + e.url + '" target="_blank" rel="noopener">' + img : '<div class="shot">' + (e.thumb ? img : '<div style="aspect-ratio:4/3;background:var(--line)"></div>') + '<div class="veil">' + VM.t('upcoming') + '</div>';
     picture += '<span class="badge' + (live ? '' : ' up') + '">' + VM.t(live ? 'live' : 'upcoming') + '</span>' + (e.pcOnly ? '<span class="pcflag">' + VM.t('pcOnly') + '</span>' : '') + (live ? '</a>' : '</div>');
     var cap = '<div class="cap"><h2>' + VM.name(e) + '</h2><div class="sub">' + (live ? e.version + ' · ' + VM.date(e.deployed) : VM.t('upcoming')) + '</div></div>';
-    return '<article class="pin" tabindex="0"><div class="face"><div class="front">' + picture + cap + '<div class="more"><div>' + detail + '</div></div></div>' +
+    return '<article class="pin" tabindex="0" data-i="' + i + '"><div class="face"><div class="front">' + picture + cap + '<div class="more"><div>' + detail + '</div></div></div>' +
       '<div class="back"><h2>' + VM.name(e) + '</h2>' + detail + '</div></div></article>';
-  }).join('') + '<a class="plus" href="#ideas"><b>+</b><span>' + VM.t('formTitle') + '</span></a>';
-  Array.prototype.forEach.call(board.querySelectorAll('.pin'), function (pin) {
-    pin.addEventListener('click', function (ev) {
-      if (ev.target.closest('a')) return;
-      pin.classList.toggle('open');
-    });
-  });
+  }).concat('<a class="plus" href="#ideas"><b>+</b><span>' + VM.t('formTitle') + '</span></a>');
+  cols = 0;
+  layout();
 }
+/** As many columns of at least 250px as fit, up to four; card i goes to column i % n. */
+function layout() {
+  var board = document.getElementById('board');
+  var n = Math.max(1, Math.min(4, Math.floor((board.clientWidth + 16) / (250 + 16))));
+  if (n === cols) return;
+  cols = n;
+  var html = [];
+  for (var c = 0; c < n; c++) html.push(cards.filter(function (_, i) { return i % n === c; }).join(''));
+  board.innerHTML = html.map(function (h) { return '<div class="col">' + h + '</div>'; }).join('');
+}
+document.getElementById('board').addEventListener('click', function (ev) {
+  var pin = ev.target.closest('.pin');
+  if (pin && !ev.target.closest('a')) pin.classList.toggle('open');
+});
+window.addEventListener('resize', layout);
 VM.onLang(render);
 VM.wireForm(document.getElementById('idea-form'));
 VM.start();
