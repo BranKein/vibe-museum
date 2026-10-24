@@ -53,7 +53,7 @@ export function parseIdea(file, text) {
     noted: (/\d{4}-\d{2}-\d{2}/.exec(field('작성일')) || [''])[0],
     repo: parseGithubUrl(field('저장소')),
     // "- 출처: vive-museum#12" ties an idea to the visitor's issue, so the visitor hears when it is built.
-    sourceIssue: Number((/vive-museum#(\d+)/.exec(field('출처')) || [])[1]) || null,
+    sourceIssue: Number((/vi[vb]e-museum#(\d+)/.exec(field('출처')) || [])[1]) || null,
   };
 }
 
@@ -99,15 +99,18 @@ export function aspectOf(value) {
  *   (exhibit is the parsed deploy/exhibit.json or null; version null if never tagged).
  * ideas: parseIdea() results. The museum itself is shown like any other project.
  */
+/** A repository name without the vive-/vibe- prefix (the repositories were renamed from vive- to vibe-). */
+export const repoKey = (name) => name.toLowerCase().replace(/^vi[vb]e-/, '');
+
 export function buildExhibits({ projects, ideas, domain = 'yeonhyuk.me' }) {
   const live = [];
   const shownRepos = new Set();
   for (const p of projects) {
     if (!p.exhibit || !p.version || !p.site || !p.site.subdomain) continue;
     const ex = p.exhibit;
-    shownRepos.add(p.repo.toLowerCase());
+    shownRepos.add(repoKey(p.repo));
     live.push({
-      id: ex.id || p.repo.replace(/^vive-/, ''),
+      id: ex.id || repoKey(p.repo),
       status: 'live',
       title: both(ex.title, p.repo),
       blurb: both(ex.blurb, ''),
@@ -125,7 +128,7 @@ export function buildExhibits({ projects, ideas, domain = 'yeonhyuk.me' }) {
   }
   const upcoming = ideas
     .filter((i) => i.kind === 'upcoming')
-    .filter((i) => !i.repo || !shownRepos.has(i.repo.repo.toLowerCase()))
+    .filter((i) => !i.repo || !shownRepos.has(repoKey(i.repo.repo)))
     .map((i) => ({
       id: i.file.replace(/\.md$/, ''),
       status: 'upcoming',
@@ -160,7 +163,7 @@ export function esc(text) {
 export function ogTags({ title, description, url, image }) {
   const tags = [
     ['property', 'og:type', 'website'],
-    ['property', 'og:site_name', 'Vive Museum'],
+    ['property', 'og:site_name', 'Vibe Museum'],
     ['property', 'og:title', title],
     ['property', 'og:description', description],
     ['property', 'og:url', url],

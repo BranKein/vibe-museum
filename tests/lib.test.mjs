@@ -97,7 +97,7 @@ test('buildExhibits: live from the projects (the museum too), upcoming from the 
   const projects = [
     PROJECT,
     { owner: 'BranKein', repo: 'vive-infra', exhibit: null },
-    { owner: 'BranKein', repo: 'vive-museum', exhibit: { title: 'M' }, site: { subdomain: 'vive-museum' }, version: 'v0.0.3', deployed: '2026-10-16', started: '2026-10-15' },
+    { owner: 'BranKein', repo: 'vibe-museum', exhibit: { title: 'M' }, site: { subdomain: 'vive-museum' }, version: 'v0.0.3', deployed: '2026-10-16', started: '2026-10-15' },
     { owner: 'BranKein', repo: 'vive-untagged', exhibit: { title: 'U' }, site: { subdomain: 'u' }, version: null },
   ];
   const list = buildExhibits({ projects, ideas });
@@ -121,7 +121,7 @@ test('buildExhibits: a project without v1.0.0 counts days to its latest release'
 });
 
 test('builtIssues lists finished ideas that came from a visitor', () => {
-  const done = parseIdea('d.md', '# D\n\n- 상태: 완료\n- 출처: vive-museum#7\n');
+  const done = parseIdea('d.md', '# D\n\n- 상태: 완료\n- 출처: vibe-museum#7\n');
   const open = parseIdea('o.md', '# O\n\n- 상태: 아이디어\n- 출처: vive-museum#8\n');
   assert.deepEqual(builtIssues([done, open]), [7]);
 });

@@ -102,7 +102,7 @@ export function copy(lang) {
 /** A small page. Every link opens one of these first; only its button does the work (mail scanners open links). */
 export function page({ title, body, lang = 'ko', siteUrl }) {
   return '<!doctype html><html lang="' + lang + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
-    '<meta name="robots" content="noindex"><title>' + esc(title) + ' · Vive Museum</title><style>' +
+    '<meta name="robots" content="noindex"><title>' + esc(title) + ' · Vibe Museum</title><style>' +
     'body{margin:0;background:#fbfbfa;color:#17181a;font:400 16px/1.6 system-ui,sans-serif;word-break:keep-all}' +
     '@media (prefers-color-scheme:dark){body{background:#141517;color:#ececea}.box{background:#1d1e21!important;border-color:#2a2b2f!important}}' +
     'main{max-width:560px;margin:0 auto;padding:48px 16px}.box{background:#fff;border:1px solid #e2e2de;border-radius:14px;padding:20px;margin:16px 0}' +
@@ -127,7 +127,7 @@ export function ideaBox(idea, { withEmail = true } = {}) {
 
 /** The mail to the owner: the idea, the visitor's address if any, and approve/reject links. */
 export function reviewMail({ idea, reviewUrl, test = false }) {
-  const subject = '[Vive Museum] ' + (test ? '테스트 · ' : '') + '새 아이디어: ' + idea.title;
+  const subject = '[Vibe Museum] ' + (test ? '테스트 · ' : '') + '새 아이디어: ' + idea.title;
   const approve = reviewUrl + '&d=approve';
   const reject = reviewUrl + '&d=reject';
   const text = [
@@ -160,7 +160,7 @@ export function reviewMail({ idea, reviewUrl, test = false }) {
 /** The mail to a visitor who left an address: confirm it, or drop it. */
 export function confirmMail({ idea, confirmUrl, unsubscribeUrl }) {
   const en = idea.lang === 'en';
-  const subject = en ? '[Vive Museum] Confirm your email' : '[Vive Museum] 이메일을 확인해 주세요';
+  const subject = en ? '[Vibe Museum] Confirm your email' : '[Vibe Museum] 이메일을 확인해 주세요';
   const lines = en
     ? ['Thank you for your idea "' + idea.title + '".', 'Confirm this address to get one email when it is built (within 24 hours):', confirmUrl, '', 'Did not send it? Ignore this mail, or delete the address now:', unsubscribeUrl]
     : ['"' + idea.title + '" 아이디어를 남겨 주셔서 고맙습니다.', '이 아이디어가 만들어졌을 때 한 번 알림을 받으려면 24시간 안에 주소를 확인해 주세요:', confirmUrl, '', '보낸 적이 없다면 이 메일을 무시하시거나, 지금 주소를 지울 수 있습니다:', unsubscribeUrl];
@@ -170,7 +170,7 @@ export function confirmMail({ idea, confirmUrl, unsubscribeUrl }) {
 /** The one mail a visitor gets when their idea is built. */
 export function builtMail({ idea, museumUrl, unsubscribeUrl }) {
   const en = idea.lang === 'en';
-  const subject = en ? '[Vive Museum] Your idea is built' : '[Vive Museum] 남겨 주신 아이디어가 만들어졌습니다';
+  const subject = en ? '[Vibe Museum] Your idea is built' : '[Vibe Museum] 남겨 주신 아이디어가 만들어졌습니다';
   const lines = en
     ? ['"' + idea.title + '" is built and on view at the museum:', museumUrl, '', 'This is the only email about it; your address is now deleted.', 'Unsubscribe: ' + unsubscribeUrl]
     : ['"' + idea.title + '" 아이디어가 만들어져 박물관에 걸렸습니다:', museumUrl, '', '이 아이디어에 대한 메일은 이것뿐이고, 주소는 이제 지웠습니다.', '수신 거부: ' + unsubscribeUrl];

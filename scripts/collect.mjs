@@ -8,7 +8,7 @@ import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildExhibits, builtIssues, latestVersionTag, parseGitmodules, parseIdea, seoulDate } from './lib.mjs';
+import { buildExhibits, builtIssues, latestVersionTag, parseGitmodules, parseIdea, repoKey, seoulDate } from './lib.mjs';
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOT_REPO = process.env.ROOT_REPO || 'BranKein/vive-coding-playground';
@@ -64,7 +64,7 @@ async function project({ owner, repo }, thumbDir) {
   if (exhibit.thumbnail) {
     const image = await fileOf(owner, repo, exhibit.thumbnail.replace(/^\.?\//, ''), { binary: true });
     if (image) {
-      const name = (exhibit.id || repo.replace(/^vive-/, '')) + extname(exhibit.thumbnail).toLowerCase();
+      const name = (exhibit.id || repoKey(repo)) + extname(exhibit.thumbnail).toLowerCase();
       await writeFile(join(thumbDir, name), image);
       out.thumb = 'img/exhibits/' + name;
     }

@@ -1,4 +1,4 @@
-# Vive Museum 계획
+# Vibe Museum 계획
 
 기획 원문은 루트 저장소의 `ideas/project-museum-site.md`다. 기획과 이 문서가 어긋나면 기획의 "결정된 사항"이 우선한다.
 

@@ -57,7 +57,7 @@ test('an idea without email: owner mail, approve makes an issue and forgets it',
   assert.equal(res.statusCode, 202);
   assert.equal(sent.length, 1);
   assert.equal(sent[0].to, 'owner@x.io');
-  assert.match(sent[0].subject, /\[Vive Museum\] 새 아이디어: 퍼즐 게임/);
+  assert.match(sent[0].subject, /\[Vibe Museum\] 새 아이디어: 퍼즐 게임/);
   const t = tokenIn(sent[0].text, '/review');
 
   // Opening the link only shows a page.
@@ -167,7 +167,7 @@ test('unknown routes are 404', async () => {
 
 test('the test review mail says it is a test', () => {
   const m = reviewMail({ idea: { title: '가짜', description: '설명', email: 'v@x.io' }, reviewUrl: 'https://api.test/review?t=x', test: true });
-  assert.match(m.subject, /^\[Vive Museum\] 테스트 · 새 아이디어: 가짜$/);
+  assert.match(m.subject, /^\[Vibe Museum\] 테스트 · 새 아이디어: 가짜$/);
   assert.match(m.text, /승인: https:\/\/api\.test\/review\?t=x&d=approve/);
   assert.match(m.html, /거절/);
 });

@@ -6,7 +6,7 @@
   var CONFIG = window.VM_CONFIG || { ideasApi: '', turnstileSiteKey: '' };
 
   var STRINGS = {
-    site: { ko: '바이브 뮤지엄', en: 'Vive Museum' },
+    site: { ko: '바이브 뮤지엄', en: 'Vibe Museum' },
     tagline: { ko: '바이브 코딩으로 만든 것들을 모아 둔 작은 박물관', en: 'A small museum of things made by vibe coding' },
     live: { ko: '전시 중', en: 'On view' },
     upcoming: { ko: '준비 중', en: 'In preparation' },

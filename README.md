@@ -1,4 +1,4 @@
-# Vive Museum
+# Vibe Museum
 
 바이브 코딩으로 만든 프로젝트들을 모아 전시하는 정적 사이트다. 주소는 <https://vive-museum.yeonhyuk.me>.
 

@@ -29,28 +29,28 @@ const COPY = ['shared.js', 'img', 'data'];
 // canonical is the page search engines should show; the entrance only sends visitors on, so it points at the pinboard.
 export const PAGE_META = {
   'index.html': {
-    title: '바이브 뮤지엄 · Vive Museum',
+    title: '바이브 뮤지엄 · Vibe Museum',
     description: '바이브 코딩으로 만든 것들을 모아 둔 작은 박물관. A small museum of things made by vibe coding.',
     canonical: 'pinboard.html',
   },
   'pinboard.html': {
-    title: '바이브 뮤지엄 · Vive Museum',
+    title: '바이브 뮤지엄 · Vibe Museum',
     description: '바이브 코딩으로 만든 것들을 모아 둔 작은 박물관. 전시 중인 작품과 준비 중인 작품을 핀보드에서 둘러봅니다. ' +
       'A small museum of things made by vibe coding: works on show and works in progress, pinned to one board.',
     canonical: 'pinboard.html',
   },
   'hall.html': {
-    title: '3D 전시관 · Gallery Walk — 바이브 뮤지엄 Vive Museum',
+    title: '3D 전시관 · Gallery Walk — 바이브 뮤지엄 Vibe Museum',
     description: '바이브 코딩으로 만든 작품들을 3D 복도를 걸으며 봅니다. Walk a 3D corridor of things made by vibe coding.',
     canonical: 'hall.html',
   },
   'catalogue.html': {
-    title: '전시 도록 · Catalogue — 바이브 뮤지엄 Vive Museum',
+    title: '전시 도록 · Catalogue — 바이브 뮤지엄 Vibe Museum',
     description: '바이브 코딩으로 만든 작품들을 한 장씩 넘기는 도록. A catalogue of things made by vibe coding, one plate at a time.',
     canonical: 'catalogue.html',
   },
   'night.html': {
-    title: '야간 개장 · After Hours — 바이브 뮤지엄 Vive Museum',
+    title: '야간 개장 · After Hours — 바이브 뮤지엄 Vibe Museum',
     description: '큰 글씨와 큰 그림으로 보는 바이브 코딩 작품들. 손전등으로 둘러볼 수도 있습니다. ' +
       'Things made by vibe coding in large type and large pictures, with a torch to look around.',
     canonical: 'night.html',
@@ -99,9 +99,9 @@ export function staticList(exhibits) {
 /** schema.org WebSite and ItemList of the exhibits as JSON-LD. */
 export function jsonLd(exhibits, siteUrl) {
   const data = [
-    { '@context': 'https://schema.org', '@type': 'WebSite', name: '바이브 뮤지엄 · Vive Museum', url: siteUrl + '/', inLanguage: ['ko', 'en'], description: PAGE_META['pinboard.html'].description },
+    { '@context': 'https://schema.org', '@type': 'WebSite', name: '바이브 뮤지엄 · Vibe Museum', url: siteUrl + '/', inLanguage: ['ko', 'en'], description: PAGE_META['pinboard.html'].description },
     {
-      '@context': 'https://schema.org', '@type': 'ItemList', name: '바이브 뮤지엄 전시품 · Vive Museum exhibits',
+      '@context': 'https://schema.org', '@type': 'ItemList', name: '바이브 뮤지엄 전시품 · Vibe Museum exhibits',
       itemListElement: ordered(exhibits).map((e, i) => {
         const item = { '@type': 'ListItem', position: i + 1, name: e.title.ko + ' · ' + e.title.en, description: e.blurb.ko + ' ' + e.blurb.en };
         if (e.status === 'live') item.url = e.url;
@@ -173,13 +173,13 @@ export function configScript(env) {
 
 /** A page that previews one exhibit when shared, then sends the visitor on to the museum. */
 export function sharePage(exhibit, siteUrl, beacon) {
-  const title = exhibit.title.en + ' · ' + exhibit.title.ko + ' — Vive Museum';
+  const title = exhibit.title.en + ' · ' + exhibit.title.ko + ' — Vibe Museum';
   const description = exhibit.blurb.en + ' ' + exhibit.blurb.ko;
   const image = exhibit.thumb ? siteUrl + '/' + exhibit.thumb : siteUrl + '/img/og.png';
   return '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     '<title>' + esc(title) + '</title>\n' + ogTags({ title, description, url: siteUrl + '/e/' + exhibit.id + '.html', image }) + '\n' +
     '<meta name="robots" content="noindex">\n<meta http-equiv="refresh" content="0; url=../index.html">\n' + beacon + '\n</head>\n<body>\n' +
-    '<p><a href="../index.html">Vive Museum</a> · <a href="' + esc(exhibit.url) + '">' + esc(exhibit.title.en) + '</a></p>\n</body>\n</html>\n';
+    '<p><a href="../index.html">Vibe Museum</a> · <a href="' + esc(exhibit.url) + '">' + esc(exhibit.title.en) + '</a></p>\n</body>\n</html>\n';
 }
 
 /** One page as built: its title, the plain exhibit list and the head tags (plus the ad loader where a page has a slot). */
