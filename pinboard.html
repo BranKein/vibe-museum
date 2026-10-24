@@ -37,11 +37,11 @@ html, body { margin: 0; }
 /* Keep the scrollbar's room even while the page fits, so opening a card never narrows the board. */
 html { scrollbar-gutter: stable; }
 body { background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--body); }
-main, .tools, .ideas, .intro { margin-inline: clamp(16px, 3vw, 40px); }
+main, .tools, .intro { margin-inline: clamp(16px, 3vw, 40px); }
 .intro { padding-top: 26px; }
 .intro h1 { font: 400 clamp(30px, 4.4vw, 50px)/1.05 var(--display); margin: 0 0 6px; }
 .intro p { margin: 0 0 18px; color: var(--muted); }
-.ideas { margin-bottom: 56px; }
+main { margin-bottom: 40px; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
@@ -84,11 +84,17 @@ a { color: inherit; }
 .mode-flip .more { display: none; }
 .mode-flip .pin:hover .face, .mode-flip .pin:focus-within .face, .mode-flip .pin.open .face { transform: rotateY(180deg); }
 .mode-flip .back h2 { font-size: 16px; margin: 0 14px 6px; }
-.plus { margin: 0 0 16px; display: grid; place-items: center; gap: 6px; text-align: center; aspect-ratio: 1; border: 2px dashed var(--line); border-radius: 16px; text-decoration: none; color: var(--muted); padding: 18px; }
+.plus { width: 100%; font: inherit; background: none; cursor: pointer; margin: 0 0 16px; display: grid; place-items: center; gap: 6px; text-align: center; aspect-ratio: 1; border: 2px dashed var(--line); border-radius: 16px; text-decoration: none; color: var(--muted); padding: 18px; }
 .plus b { font: 400 54px/1 var(--display); color: var(--accent); }
-.plus:hover { border-color: var(--accent); color: var(--ink); }
-.ideas { max-width: 720px; margin: 40px auto 56px; background: var(--card); border-radius: 22px; padding: clamp(20px, 4vw, 34px); }
-.ideas h2 { font: 400 32px/1.1 var(--display); margin: 0 0 8px; }
+.plus:hover, .plus:focus-visible { border-color: var(--accent); color: var(--ink); }
+/* The idea form opens over the board from the + card. */
+.ideas { width: calc(100% - 32px); max-width: 640px; max-height: calc(100dvh - 32px); overflow: auto; border: 0; background: var(--card); color: var(--ink); border-radius: 22px; padding: clamp(20px, 4vw, 34px); box-shadow: 0 30px 80px -20px rgba(0,0,0,.45); }
+.ideas::backdrop { background: rgba(15,16,18,.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.ideas[open] { animation: rise .22s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.ideas .close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.ideas .close:hover { border-color: var(--ink); }
+.ideas h2 { font: 400 32px/1.1 var(--display); margin: 0 44px 8px 0; }
 .ideas > p { margin: 0 0 16px; color: var(--muted); }
 form { display: grid; gap: 12px; }
 label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; }
@@ -100,7 +106,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
 [data-form-status] { margin: 0; font-size: 14px; }
 [data-kind="ok"] { color: var(--accent); } [data-kind="error"] { color: #a33a2b; }
 @media (hover: none) { .mode-expand .more { grid-template-rows: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .face, .more { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .face, .more { transition: none; } .ideas[open] { animation: none; } }
 </style>
 </head>
 <body data-hall="pinboard">
@@ -111,7 +117,8 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
   <div class="seg" role="group" aria-label="hover" id="mode"></div>
 </div>
 <main class="board mode-flip" id="board"></main>
-<section class="ideas" id="ideas" aria-labelledby="ideas-h">
+<dialog class="ideas" id="ideas" aria-labelledby="ideas-h">
+  <button class="close" type="button" id="ideas-close" aria-label="Close">×</button>
   <h2 id="ideas-h" data-t="formTitle"></h2>
   <p data-t="formIntro"></p>
   <form id="idea-form" novalidate>
@@ -123,7 +130,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
     <p data-form-status hidden></p>
     <span class="hint" data-t="privacy"></span>
   </form>
-</section>
+</dialog>
 
 <script src="config.js"></script>
 <script src="data/exhibits.js"></script>
@@ -156,7 +163,7 @@ function render() {
     var cap = '<div class="cap"><h2>' + VM.name(e) + '</h2><div class="sub">' + (live ? e.version + ' · ' + VM.date(e.deployed) : VM.t('upcoming')) + '</div></div>';
     return '<article class="pin" tabindex="0" data-i="' + i + '"><div class="face"><div class="front">' + picture + cap + '<div class="more"><div>' + detail + '</div></div></div>' +
       '<div class="back"><h2>' + VM.name(e) + '</h2>' + detail + '</div></div></article>';
-  }).concat('<a class="plus" href="#ideas"><b>+</b><span>' + VM.t('formTitle') + '</span></a>');
+  }).concat('<button type="button" class="plus" aria-haspopup="dialog"><b>+</b><span>' + VM.t('formTitle') + '</span></button>');
   cols = 0;
   layout();
 }
@@ -170,14 +177,29 @@ function layout() {
   for (var c = 0; c < n; c++) html.push(cards.filter(function (_, i) { return i % n === c; }).join(''));
   board.innerHTML = html.map(function (h) { return '<div class="col">' + h + '</div>'; }).join('');
 }
+var ideas = document.getElementById('ideas'), wired = false;
+/** Opens the idea form. It is wired on first opening, so its human check draws in a visible box. */
+function openIdeas() {
+  if (!wired) { VM.wireForm(document.getElementById('idea-form')); wired = true; }
+  if (!ideas.open) ideas.showModal();
+  document.getElementById('f-title').focus();
+}
+document.getElementById('ideas-close').addEventListener('click', function () { ideas.close(); });
+// A click on the dimmed backdrop lands on the dialog itself, outside its box.
+ideas.addEventListener('click', function (ev) {
+  if (ev.target !== ideas) return;
+  var r = ideas.getBoundingClientRect();
+  if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) ideas.close();
+});
 document.getElementById('board').addEventListener('click', function (ev) {
+  if (ev.target.closest('.plus')) return openIdeas();
   var pin = ev.target.closest('.pin');
   if (pin && !ev.target.closest('a')) pin.classList.toggle('open');
 });
 window.addEventListener('resize', layout);
 VM.onLang(render);
-VM.wireForm(document.getElementById('idea-form'));
 VM.start();
+if (location.hash === '#ideas') openIdeas();
 </script>
 </body>
 </html>
