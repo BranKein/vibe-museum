@@ -270,10 +270,132 @@ function build() {
   scene.background = new THREE.Color('#1b1c1f');
   scene.fog = new THREE.Fog('#1b1c1f', 18, 60);
   var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 120);
-  scene.add(new THREE.HemisphereLight('#fff6e8', '#3b3530', 0.75));
-  var key = new THREE.DirectionalLight('#ffffff', 0.35); key.position.set(2, 8, 4); scene.add(key);
+  scene.add(new THREE.HemisphereLight('#fff6e8', '#4a3d32', 0.42));
+  var key = new THREE.DirectionalLight('#ffffff', 0.2); key.position.set(2, 8, 4); scene.add(key);
   var group = new THREE.Group(); scene.add(group);
   return { renderer: renderer, scene: scene, camera: camera, group: group, frames: [], textures: [], dims: [], holders: [], boards: [], off: { x: 0, y: 0 } };
+}
+
+var CEIL = 4.2, TRACK = 1.6;
+var MAT = null;
+/** Shared materials of the room, made once. */
+function materials() {
+  if (MAT) return MAT;
+  MAT = {
+    wall: new THREE.MeshStandardMaterial({ color: '#ece6dc', roughness: 0.95 }),
+    wainscot: new THREE.MeshStandardMaterial({ color: '#ddd4c6', roughness: 0.9 }),
+    feature: new THREE.MeshStandardMaterial({ color: '#2f4a43', roughness: 0.95 }),
+    featureLow: new THREE.MeshStandardMaterial({ color: '#253c36', roughness: 0.9 }),
+    trim: new THREE.MeshStandardMaterial({ color: '#3a332c', roughness: 0.6 }),
+    rail: new THREE.MeshStandardMaterial({ color: '#f4efe6', roughness: 0.7 }),
+    brass: new THREE.MeshStandardMaterial({ color: '#b08d57', roughness: 0.35, metalness: 0.7 }),
+    metal: new THREE.MeshStandardMaterial({ color: '#1e1f21', roughness: 0.45, metalness: 0.6 }),
+    beam: new THREE.MeshStandardMaterial({ color: '#efeae1', roughness: 0.9 }),
+    ceil: new THREE.MeshStandardMaterial({ color: '#e4ded3', roughness: 1 }),
+    sky: new THREE.MeshBasicMaterial({ color: '#e9e2d4' }),
+    glow: new THREE.MeshBasicMaterial({ color: '#fff1d6' }),
+    runner: new THREE.MeshStandardMaterial({ color: '#45191c', roughness: 1 }),
+    runnerEdge: new THREE.MeshStandardMaterial({ color: '#b39463', roughness: 1 }),
+    seat: new THREE.MeshStandardMaterial({ color: '#4a3424', roughness: 0.5 }),
+    door: new THREE.MeshBasicMaterial({ color: '#141416' }),
+  };
+  return MAT;
+}
+/** Oak planks running down the hall, drawn once on a canvas. */
+function plankTexture() {
+  var c = document.createElement('canvas'); c.width = 512; c.height = 1024;
+  var g = c.getContext('2d'), pw = 64, seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  for (var x = 0; x < 512; x += pw) {
+    var y = -Math.floor(rnd() * 400);
+    while (y < 1024) {
+      var len = 300 + Math.floor(rnd() * 300), l = 34 + Math.floor(rnd() * 10);
+      g.fillStyle = 'hsl(28, 38%, ' + l + '%)'; g.fillRect(x, y, pw, len);
+      g.strokeStyle = 'rgba(40,25,12,.18)'; g.lineWidth = 1;
+      for (var k = 0; k < 5; k++) { var gx = x + 6 + rnd() * (pw - 12); g.beginPath(); g.moveTo(gx, y); g.lineTo(gx + rnd() * 6 - 3, y + len); g.stroke(); }
+      g.fillStyle = '#2c1d12'; g.fillRect(x, y + len - 2, pw, 2);
+      y += len;
+    }
+    g.fillStyle = '#2c1d12'; g.fillRect(x, 0, 2, 1024);
+  }
+  var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+function box(g, mat, w, h, d, x, y, z) {
+  var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m;
+}
+/**
+ * One wall with its finish: plain plaster above, a lower panel with a rail on top, and a skirting board.
+ * The wall runs `span` long, centred on (x, z), turned by `rot` like the works on it.
+ */
+function wall(g, span, x, z, rot, upper, lower) {
+  var w = new THREE.Group(); w.position.set(x, 0, z); w.rotation.y = rot; g.add(w);
+  var plaster = new THREE.Mesh(new THREE.PlaneGeometry(span, CEIL), upper); plaster.position.y = CEIL / 2; w.add(plaster);
+  var panel = new THREE.Mesh(new THREE.PlaneGeometry(span, 0.95), lower); panel.position.set(0, 0.475, 0.005); w.add(panel);
+  box(w, MAT.rail, span, 0.05, 0.04, 0, 0.96, 0.02);
+  box(w, MAT.trim, span, 0.16, 0.04, 0, 0.08, 0.02);
+  box(w, MAT.beam, span, 0.12, 0.12, 0, CEIL - 0.06, 0.06);
+  return w;
+}
+/** Floor, walls, ceiling and benches of the hall. The end wall, where the middle work hangs, is a deep green. */
+function room(g, plan, near, length, mid) {
+  materials();
+  var floorTex = plankTexture(); world.textures.push(floorTex);
+  floorTex.repeat.set(WALL_X * 2 / 1.6, length / 4);
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.45, metalness: 0.05 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, mid); g.add(floor);
+  // A long runner down the middle.
+  var runLen = length - 2.4, runMid = near - 1 - runLen / 2;
+  var edge = new THREE.Mesh(new THREE.PlaneGeometry(2.3, runLen), MAT.runnerEdge); edge.rotation.x = -Math.PI / 2; edge.position.set(0, 0.004, runMid); g.add(edge);
+  var rug = new THREE.Mesh(new THREE.PlaneGeometry(2.1, runLen - 0.2), MAT.runner); rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.006, runMid); g.add(rug);
+
+  wall(g, length, -WALL_X, mid, WALLS.left.rot, MAT.wall, MAT.wainscot);
+  wall(g, length, WALL_X, mid, WALLS.right.rot, MAT.wall, MAT.wainscot);
+  wall(g, WALL_X * 2, 0, plan.zEnd, WALLS.end.rot, MAT.feature, MAT.featureLow);
+  // The way in, behind the door: a dark doorway in a trimmed frame.
+  wall(g, WALL_X * 2, 0, near, Math.PI, MAT.wall, MAT.wainscot);
+  var door = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.9), MAT.door); door.rotation.y = Math.PI; door.position.set(0, 1.45, near - 0.03); g.add(door);
+  box(g, MAT.trim, 2.5, 0.15, 0.08, 0, 2.95, near - 0.04);
+  [-1, 1].forEach(function (sd) { box(g, MAT.trim, 0.15, 3.0, 0.08, sd * 1.175, 1.5, near - 0.04); });
+
+  var ceil = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), MAT.ceil);
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, CEIL, mid); g.add(ceil);
+  // Beams across the ceiling with frosted skylights between them.
+  var bay = 3.5, z;
+  for (z = near; z > plan.zEnd; z -= bay) box(g, MAT.beam, WALL_X * 2, 0.22, 0.26, 0, CEIL - 0.11, z);
+  for (z = near - bay / 2; z > plan.zEnd + 0.5; z -= bay) {
+    var sky = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2 - TRACK * 2 - 0.8, bay - 0.9), MAT.sky);
+    sky.rotation.x = Math.PI / 2; sky.position.set(0, CEIL - 0.01, z); g.add(sky);
+  }
+  // Light tracks that the spotlights hang from, along each wall that has works.
+  box(g, MAT.metal, 0.06, 0.05, length - 1, -WALL_X + TRACK, CEIL - 0.25, mid - 0.5);
+  box(g, MAT.metal, 0.06, 0.05, length - 1, WALL_X - TRACK, CEIL - 0.25, mid - 0.5);
+  box(g, MAT.metal, WALL_X * 2 - TRACK * 2, 0.05, 0.06, 0, CEIL - 0.25, plan.zEnd + TRACK);
+  [-1, 1].forEach(function (sd) { box(g, MAT.metal, 0.02, 0.22, 0.02, sd * (WALL_X - TRACK), CEIL - 0.12, plan.zEnd + TRACK); });
+
+  // Benches down the middle, between the works on the long walls.
+  var sides = plan.slots.filter(function (sl) { return sl.wall === WALLS.left; });
+  for (var k = 0; k + 1 < sides.length; k++) bench(g, (sides[k].z + sides[k + 1].z) / 2);
+}
+function bench(g, z) {
+  var b = new THREE.Group(); b.position.set(0, 0, z); g.add(b);
+  box(b, MAT.seat, 0.55, 0.07, 1.8, 0, 0.46, 0);
+  [-0.7, 0.7].forEach(function (dz) {
+    box(b, MAT.metal, 0.5, 0.04, 0.05, 0, 0.41, dz);
+    [-0.22, 0.22].forEach(function (dx) { box(b, MAT.metal, 0.04, 0.41, 0.05, dx, 0.205, dz); });
+  });
+}
+/** A track spotlight above a work, aimed at its frame, with a small lamp body you can see. */
+function spotlight(g, s, aim) {
+  var n = s.wall, x = s.x + n.nx * TRACK, z = s.z + n.nz * TRACK, y = CEIL - 0.32;
+  var target = new THREE.Object3D(); target.position.set(aim.x, aim.y, aim.z); g.add(target);
+  var spot = new THREE.SpotLight('#ffdcae', 3.2, 11, 0.46, 0.55, 1.2);
+  spot.position.set(x, y, z); spot.target = target; g.add(spot);
+  var lamp = new THREE.Group(); lamp.position.set(x, y, z); g.add(lamp); lamp.lookAt(target.position);
+  var body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.26, 16), MAT.metal); body.rotation.x = Math.PI / 2; lamp.add(body);
+  var lens = new THREE.Mesh(new THREE.CircleGeometry(0.075, 16), MAT.glow); lens.position.z = 0.131; lamp.add(lens);
+  box(g, MAT.metal, 0.02, 0.07, 0.02, x, y + 0.05, z);
 }
 
 function furnish() {
@@ -284,26 +406,11 @@ function furnish() {
   world.frames = []; world.dims = []; world.holders = []; world.boards = [];
   var plan = hang(list.length);
   world.slots = plan.slots;
-  var length = 4 - plan.zEnd;
-  var floor = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ color: '#6b4f37', roughness: 0.55, metalness: 0.05 }));
-  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 4 - length / 2); g.add(floor);
-  for (var b = 0; b < length; b += 1.2) {
-    var seam = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, 0.02), new THREE.MeshBasicMaterial({ color: '#4a3726' }));
-    seam.rotation.x = -Math.PI / 2; seam.position.set(0, 0.002, 4 - b); g.add(seam);
-  }
-  var wallMat = new THREE.MeshStandardMaterial({ color: '#e7e3dc', roughness: 0.95 });
-  [-1, 1].forEach(function (side) {
-    var wall = new THREE.Mesh(new THREE.PlaneGeometry(length, 4.2), wallMat);
-    wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; wall.position.set(side * WALL_X, 2.1, 4 - length / 2); g.add(wall);
-    var base = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, length), new THREE.MeshStandardMaterial({ color: '#2b2622' }));
-    base.position.set(side * (WALL_X - 0.03), 0.07, 4 - length / 2); g.add(base);
-  });
-  var end = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, 4.2), wallMat); end.position.set(0, 2.1, 4 - length); g.add(end);
+  var near = 6, length = near - plan.zEnd, mid = near - length / 2;
   var dark = VM.mode === 'dark';
   world.scene.background.set(dark ? '#1b1c1f' : '#c9ccd0');
   world.scene.fog.color.set(dark ? '#1b1c1f' : '#c9ccd0');
-  var ceil = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ color: dark ? '#2a2a2c' : '#d9d9d4' }));
-  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, 4 - length / 2); g.add(ceil);
+  room(g, plan, near, length, mid);
   var loader = new THREE.TextureLoader();
   list.forEach(function (e, i) {
     var s = world.slots[i], n = s.wall, live = e.status === 'live';
@@ -312,11 +419,13 @@ function furnish() {
     var holder = new THREE.Group(); holder.rotation.y = n.rot; g.add(holder);
     var frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.26, h + 0.26, 0.08), new THREE.MeshStandardMaterial({ color: live ? '#2a241d' : '#55524c', roughness: 0.6 }));
     holder.add(frame);
+    var liner = new THREE.Mesh(new THREE.BoxGeometry(w + 0.08, h + 0.08, 0.094), MAT.brass);
+    holder.add(liner);
     var tex = live ? loader.load(e.thumb) : clothTexture(e);
     if (live) tex.encoding = THREE.sRGBEncoding;
     world.textures.push(tex);
     var art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
-    art.position.z = 0.045; art.userData.index = i; holder.add(art); world.frames.push(art);
+    art.position.z = 0.05; art.userData.index = i; holder.add(art); world.frames.push(art);
     var info = boardFor(e, i, h + 0.26); world.textures.push(info.tex);
     var bx = (w + 0.26) / 2 + 0.4 + BOARD_W / 2;
     var board = new THREE.Mesh(new THREE.PlaneGeometry(BOARD_W, info.h), new THREE.MeshBasicMaterial({ map: info.tex }));
@@ -327,7 +436,7 @@ function furnish() {
     var cx = world.dims[i].cx;
     holder.position.set(s.x + n.nx * 0.06 - Math.cos(n.rot) * cx, 1.75, s.z + n.nz * 0.06 + Math.sin(n.rot) * cx);
     world.holders[i] = holder; world.boards[i] = { mesh: board, buttons: info.buttons };
-    var pool = new THREE.PointLight('#ffe7c2', 0.9, 6, 2); pool.position.set(s.x + n.nx * 1.4, 3.6, s.z + n.nz * 1.4); g.add(pool);
+    spotlight(g, s, holder.position);
   });
   // viewFor() reads where the works are before the first frame is drawn, so place them now.
   g.updateMatrixWorld(true);
