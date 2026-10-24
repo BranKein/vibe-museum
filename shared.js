@@ -164,6 +164,9 @@
     '.vm-bar button:focus-visible,.vm-modal button:focus-visible,.vm-modal a:focus-visible,.vm-foot button:focus-visible{outline:2px solid var(--vmb-accent);outline-offset:2px}',
     '.vm-bar .vm-hall b{font-weight:700}',
     '.vm-foot{background:var(--vmb-bg);color:var(--vmb-muted);border-top:1px solid var(--vmb-line);padding:22px clamp(16px,3vw,32px) calc(22px + env(safe-area-inset-bottom,0px));font:400 13px/1.6 "IBM Plex Sans KR",system-ui,sans-serif;display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between;align-items:center;word-break:keep-all}',
+    // The footer rests on the bottom of the screen when a page is short, without changing how the page lays out.
+    'body{min-height:100vh;min-height:100dvh}',
+    '.vm-foot{position:sticky;top:100vh;top:100dvh}',
     '.vm-foot b{color:var(--vmb-fg)}',
     '.vm-foot p{margin:0;max-width:60ch}',
     '.vm-foot .vm-links{display:flex;gap:16px;flex-wrap:wrap;align-items:center}',
