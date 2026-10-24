@@ -129,8 +129,8 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
 <script>
 var stage = document.getElementById('stage');
 var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-var SPACING = 7, WALL_X = 4.2, EYE = 1.6;
-var current = 0, list = [], world = null;
+var SPACING = 7, WALL_X = 6.5, END_X = 3.25, EYE = 1.6;
+var current = 0, list = [], world = null, entered = false;
 
 var BOARD_W = 1.75;
 /** Words that fit one line at the current font, Korean and English alike (broken at spaces). */
@@ -205,10 +205,24 @@ function clothTexture(e) {
   g.fillText(VM.t('upcoming'), 256, 354);
   var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
 }
-function slotFor(i) {
-  var side = i % 2 === 0 ? -1 : 1;
-  var z = -6 - Math.floor(i / 2) * SPACING - (side > 0 ? SPACING / 2 : 0);
-  return { side: side, z: z, x: side * WALL_X };
+/** Each wall's outward normal (into the room) and the turn that faces a work out of it. */
+var WALLS = { left: { nx: 1, nz: 0, rot: Math.PI / 2 }, end: { nx: 0, nz: 1, rot: 0 }, right: { nx: -1, nz: 0, rot: -Math.PI / 2 } };
+/**
+ * The works hang in a U (ㄷ): down the left wall, across the end wall, back up the right wall, so the next work is
+ * always the one beside it and a corner is a quarter turn. The end wall holds two (fewer when there are fewer than
+ * four works); the rest are split between the side walls, the left one taking the odd one.
+ * Returns each work's spot on the wall surface (the centre of the frame and its label together) and where the end wall stands.
+ */
+function hang(n) {
+  var end = n <= 2 ? n : n === 3 ? 1 : 2;
+  var left = Math.ceil((n - end) / 2), right = n - end - left;
+  var zLast = -6 - Math.max(0, left - 1) * SPACING;
+  var zEnd = left ? zLast - 4.5 : -10;
+  var slots = [], k;
+  for (k = 0; k < left; k++) slots.push({ wall: WALLS.left, x: -WALL_X, z: -6 - k * SPACING });
+  for (k = 0; k < end; k++) slots.push({ wall: WALLS.end, x: end === 1 ? 0 : (k ? END_X : -END_X), z: zEnd });
+  for (k = 0; k < right; k++) slots.push({ wall: WALLS.right, x: WALL_X, z: zLast + k * SPACING });
+  return { slots: slots, zEnd: zEnd };
 }
 /** The part of the stage the title and the walk buttons leave free, in stage pixels. */
 function freeArea() {
@@ -223,13 +237,13 @@ function freeArea() {
 function viewFor(i) {
   var W = stage.clientWidth || 1, H = stage.clientHeight || 1;
   if (i < 0 || !world || !world.dims[i]) return { pos: new THREE.Vector3(0, EYE, 4), look: new THREE.Vector3(0, EYE, -20), off: { x: 0, y: 0 } };
-  var s = slotFor(i), dim = world.dims[i], free = freeArea();
+  var n = world.slots[i].wall, dim = world.dims[i], free = freeArea();
   var center = world.holders[i].localToWorld(new THREE.Vector3(dim.cx, 0, 0));
   var tanV = Math.tan(THREE.MathUtils.degToRad(world.camera.fov / 2));
   var d = Math.max(dim.w * H / (0.92 * free.w * 2 * tanV), dim.h * H / (0.92 * free.h * 2 * tanV));
   d = Math.max(1.1, Math.min(WALL_X * 2 - 0.4, d));
   var off = { x: W / 2 - (free.x + free.w / 2), y: H / 2 - (free.y + free.h / 2) };
-  return { pos: new THREE.Vector3(center.x - s.side * d, 1.75, center.z), look: new THREE.Vector3(center.x, 1.75, center.z), off: off };
+  return { pos: new THREE.Vector3(center.x + n.nx * d, 1.75, center.z + n.nz * d), look: new THREE.Vector3(center.x, 1.75, center.z), off: off };
 }
 function applyOffset(off) {
   var W = stage.clientWidth, H = stage.clientHeight;
@@ -268,7 +282,9 @@ function furnish() {
   while (g.children.length) g.remove(g.children[0]);
   world.textures.forEach(function (t) { t.dispose(); }); world.textures = [];
   world.frames = []; world.dims = []; world.holders = []; world.boards = [];
-  var length = Math.max(20, Math.ceil(list.length / 2) * SPACING + 14);
+  var plan = hang(list.length);
+  world.slots = plan.slots;
+  var length = 4 - plan.zEnd;
   var floor = new THREE.Mesh(new THREE.PlaneGeometry(WALL_X * 2, length), new THREE.MeshStandardMaterial({ color: '#6b4f37', roughness: 0.55, metalness: 0.05 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 4 - length / 2); g.add(floor);
   for (var b = 0; b < length; b += 1.2) {
@@ -290,10 +306,10 @@ function furnish() {
   ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.2, 4 - length / 2); g.add(ceil);
   var loader = new THREE.TextureLoader();
   list.forEach(function (e, i) {
-    var s = slotFor(i), live = e.status === 'live';
+    var s = world.slots[i], n = s.wall, live = e.status === 'live';
     var h = 2.1, w = Math.min(3.4, Math.max(1.4, h * (e.aspect || 4 / 3)));
     if (w === 3.4) h = w / (e.aspect || 4 / 3);
-    var holder = new THREE.Group(); holder.position.set(s.x - s.side * 0.06, 1.75, s.z); holder.rotation.y = s.side < 0 ? Math.PI / 2 : -Math.PI / 2; g.add(holder);
+    var holder = new THREE.Group(); holder.rotation.y = n.rot; g.add(holder);
     var frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.26, h + 0.26, 0.08), new THREE.MeshStandardMaterial({ color: live ? '#2a241d' : '#55524c', roughness: 0.6 }));
     holder.add(frame);
     var tex = live ? loader.load(e.thumb) : clothTexture(e);
@@ -307,9 +323,14 @@ function furnish() {
     board.position.set(bx, 0, 0.02); holder.add(board);
     var left = -(w + 0.26) / 2, right = bx + BOARD_W / 2;
     world.dims[i] = { w: right - left, h: Math.max(h + 0.26, info.h), cx: (left + right) / 2 };
+    // Frame and label are centred on the spot together: step back along the wall by half the label's extra width.
+    var cx = world.dims[i].cx;
+    holder.position.set(s.x + n.nx * 0.06 - Math.cos(n.rot) * cx, 1.75, s.z + n.nz * 0.06 + Math.sin(n.rot) * cx);
     world.holders[i] = holder; world.boards[i] = { mesh: board, buttons: info.buttons };
-    var pool = new THREE.PointLight('#ffe7c2', 0.9, 6, 2); pool.position.set(s.x - s.side * 1.4, 3.6, s.z); g.add(pool);
+    var pool = new THREE.PointLight('#ffe7c2', 0.9, 6, 2); pool.position.set(s.x + n.nx * 1.4, 3.6, s.z + n.nz * 1.4); g.add(pool);
   });
+  // viewFor() reads where the works are before the first frame is drawn, so place them now.
+  g.updateMatrixWorld(true);
 }
 
 var anim = null, yaw = 0;
@@ -321,8 +342,13 @@ function go(i, instant) {
   var from = { pos: cam.position.clone(), look: world.look ? world.look.clone() : to.look.clone(), off: world.off || { x: 0, y: 0 } };
   yaw = 0;
   if (instant || reduce) { cam.position.copy(to.pos); world.look = to.look.clone(); applyOffset(to.off); anim = null; return; }
-  anim = { from: from, to: to, t0: performance.now(), dur: 1400 };
+  // Turn by the heading, the shorter way round, so even a half turn sweeps smoothly instead of snapping.
+  var h0 = heading(from.pos, from.look), turn = heading(to.pos, to.look) - h0;
+  turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+  anim = { from: from, to: to, h0: h0, turn: turn, t0: performance.now(), dur: 1400 + 500 * Math.abs(turn) / Math.PI };
 }
+/** Which way one looks from p towards l, as an angle round the vertical axis. */
+function heading(p, l) { return Math.atan2(l.x - p.x, l.z - p.z); }
 function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 function loop(now) {
   // Ask for the next frame first, so one bad frame never stops the hall from drawing.
@@ -334,7 +360,9 @@ function loop(now) {
     if (anim) {
       var k = Math.min(1, (now - anim.t0) / anim.dur), e = ease(k);
       cam.position.lerpVectors(anim.from.pos, anim.to.pos, e);
-      world.look = anim.from.look.clone().lerp(anim.to.look, e);
+      var h = anim.h0 + anim.turn * e;
+      var reach = THREE.MathUtils.lerp(anim.from.look.distanceTo(anim.from.pos), anim.to.look.distanceTo(anim.to.pos), e);
+      world.look = new THREE.Vector3(cam.position.x + Math.sin(h) * reach, THREE.MathUtils.lerp(anim.from.look.y, anim.to.look.y, e), cam.position.z + Math.cos(h) * reach);
       cam.position.y += Math.sin(k * Math.PI * 4) * 0.025 * (1 - k);
       applyOffset({ x: anim.from.off.x + (anim.to.off.x - anim.from.off.x) * e, y: anim.from.off.y + (anim.to.off.y - anim.from.off.y) * e });
       if (k >= 1) anim = null;
@@ -431,7 +459,13 @@ function render() {
   if (current >= list.length) current = list.length - 1;
   document.getElementById('hint').textContent = VM.lang === 'ko' ? '액자 옆 안내판의 버튼을 눌러 들어갑니다. 끌어서 둘러볼 수 있습니다.' : 'Press the buttons on the label beside each work. Drag to look around.';
   furnish();
-  go(current, true);
+  // The first time in, stand at the door and walk up to the first work.
+  if (!entered && world && !reduce) {
+    entered = true;
+    var door = viewFor(-1);
+    world.camera.position.copy(door.pos); world.look = door.look.clone(); applyOffset(door.off);
+    go(current);
+  } else go(current, true);
 }
 
 world = window.THREE ? build() : null;
