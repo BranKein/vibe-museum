@@ -41,7 +41,7 @@ python3 -m http.server 5191
 
 `scripts/collect.mjs` reads the root repository (`BranKein/vibe-coding-playground`; locally, the folder that contains this repository).
 
-- On view: reads `deploy/exhibit.json` and `deploy/site.json` from the main branch of each repository in `.gitmodules`. A repository is shown only once it has a `v*` tag. The address is `https://<subdomain>.yeonhyuk.me`, the version and date come from the latest tag, and the build period runs from the first commit to `v1.0.0` (or to the latest tag if there is none).
+- On view: reads `deploy/exhibit.json` and `deploy/site.json` from the main branch of each repository in `.gitmodules`. A repository is shown only once it has a `v*` tag. The address is `https://<subdomain>.yeonhyuk.me` (`@` means `https://yeonhyuk.me`), the version and date come from the latest tag, and the build period runs from the first commit to `v1.0.0` (or to the latest tag if there is none).
 - In preparation: ideas in `ideas/` whose status is idea, on hold or in progress. Repositories already on view are left out. The museum itself has a `deploy/exhibit.json` and is exhibited like any other project. The lines used for the English screens follow the format in `ideas/README.md`.
 
 Format of `deploy/exhibit.json` (example: vibe-warehouse-tycoon):

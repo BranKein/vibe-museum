@@ -114,7 +114,7 @@ export function buildExhibits({ projects, ideas, domain = 'yeonhyuk.me' }) {
       status: 'live',
       title: both(ex.title, p.repo),
       blurb: both(ex.blurb, ''),
-      url: 'https://' + p.site.subdomain + '.' + domain,
+      url: 'https://' + (p.site.subdomain === '@' ? '' : p.site.subdomain + '.') + domain,
       repo: 'https://github.com/' + p.owner + '/' + p.repo,
       version: p.version,
       deployed: p.deployed,

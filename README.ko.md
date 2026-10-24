@@ -41,7 +41,7 @@ python3 -m http.server 5191
 
 `scripts/collect.mjs`가 루트 저장소(`BranKein/vibe-coding-playground`, 로컬에서는 이 저장소를 품은 폴더)를 읽는다.
 
-- 전시 중: `.gitmodules`의 각 저장소 main에서 `deploy/exhibit.json`과 `deploy/site.json`을 읽는다. 가장 최근 `v*` 태그가 있어야 걸린다. 주소는 `https://<subdomain>.yeonhyuk.me`, 버전·날짜는 그 태그, 제작 기간은 첫 커밋부터 `v1.0.0`까지(없으면 최근 태그까지).
+- 전시 중: `.gitmodules`의 각 저장소 main에서 `deploy/exhibit.json`과 `deploy/site.json`을 읽는다. 가장 최근 `v*` 태그가 있어야 걸린다. 주소는 `https://<subdomain>.yeonhyuk.me`(`@`는 `https://yeonhyuk.me`), 버전·날짜는 그 태그, 제작 기간은 첫 커밋부터 `v1.0.0`까지(없으면 최근 태그까지).
 - 준비 중: `ideas/`에서 상태가 아이디어·보류·구현 중인 것. 이미 전시 중인 저장소는 뺀다. 박물관 자신도 `deploy/exhibit.json`이 있어 다른 프로젝트처럼 전시된다. 영어 화면용 줄은 `ideas/README.md`의 형식을 따른다.
 
 `deploy/exhibit.json` 형식(예: vibe-warehouse-tycoon):

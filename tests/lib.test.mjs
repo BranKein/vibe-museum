@@ -120,6 +120,11 @@ test('buildExhibits: a project without v1.0.0 counts days to its latest release'
   assert.equal(e.days, 4);
 });
 
+test('buildExhibits: subdomain @ is the root domain', () => {
+  const [e] = buildExhibits({ projects: [{ ...PROJECT, site: { subdomain: '@' } }], ideas: [] });
+  assert.equal(e.url, 'https://yeonhyuk.me');
+});
+
 test('builtIssues lists finished ideas that came from a visitor', () => {
   const done = parseIdea('d.md', '# D\n\n- 상태: 완료\n- 출처: vibe-museum#7\n');
   const open = parseIdea('o.md', '# O\n\n- 상태: 아이디어\n- 출처: vive-museum#8\n');
