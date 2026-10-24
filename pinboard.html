@@ -34,6 +34,8 @@
 * { box-sizing: border-box; }
 body { word-break: keep-all; overflow-wrap: break-word; }
 html, body { margin: 0; }
+/* Keep the scrollbar's room even while the page fits, so opening a card never narrows the board. */
+html { scrollbar-gutter: stable; }
 body { background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--body); }
 main, .tools, .ideas, .intro { margin-inline: clamp(16px, 3vw, 40px); }
 .intro { padding-top: 26px; }
