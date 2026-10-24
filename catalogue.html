@@ -10,15 +10,15 @@
 <style>
 /* Layout: an exhibition catalogue open on a desk; each spread is one plate and its catalogue entry; the last spread is the reader's reply page. */
 :root {
-  --desk: #d3d6d2;
-  --desk-hi: #e6e8e5;
-  --on-desk: #23221f;
-  --on-desk-soft: #5c5d58;
+  --desk: #a88d68;
+  --desk-hi: #cdb48d;
+  --on-desk: #241b12;
+  --on-desk-soft: #4f3f2d;
   --mark: #7b2d2a;
-  --paper: #fbfbf8;
-  --paper-edge: #d8dad3;
-  --ink: #23221f;
-  --muted: #74726b;
+  --paper: #fffcf5;
+  --paper-edge: #e3d8c3;
+  --ink: #1f1b16;
+  --muted: #6d6456;
   --oxblood: #7b2d2a;
   --serif: "Hahmlet", "Noto Serif KR", Georgia, serif;
   color-scheme: light;
@@ -37,7 +37,11 @@
 body { word-break: keep-all; overflow-wrap: break-word; }
 html, body { margin: 0; }
 body { background: radial-gradient(120% 90% at 50% 20%, var(--desk-hi), var(--desk)); color: var(--on-desk); font: 400 16px/1.7 var(--serif); }
-.desk { padding-inline: clamp(16px, 4vw, 48px); padding-block: 22px 64px; }
+/* The footer sits at the bottom of the screen even when the book is short; the book is centred in the space above it. */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.vm-foot { margin-top: auto; }
+.desk { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding-inline: clamp(16px, 4vw, 48px); padding-block: 22px 64px; }
+.desk > * { width: 100%; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; }
 .bar { max-width: 1180px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -127,24 +131,24 @@ function run(label) { return '<div class="run"><span>' + VM.t('site') + '</span>
 function draw() {
   var ko = VM.lang === 'ko';
   var list = VM.exhibits();
-  document.getElementById('book-title').textContent = ko ? '소장품 도록 2026' : 'Collection catalogue 2026';
+  document.getElementById('book-title').textContent = ko ? '소장품 카탈로그 2026' : 'Collection catalogue 2026';
   var total = list.length + 2; // contents, plates, reply page
   spread = Math.max(0, Math.min(total - 1, spread));
   var book = document.getElementById('book');
   var folioL = spread * 2 + 2, folioR = folioL + 1;
   var left, right;
   if (spread === 0) {
-    left = run(ko ? '소장품 도록 2026' : 'Collection catalogue 2026') +
+    left = run(ko ? '소장품 카탈로그 2026' : 'Collection catalogue 2026') +
       '<div class="plate"><div class="entry"><h2>' + VM.t('site') + '</h2><p class="sub">' + VM.t('tagline') + '</p><p>' + VM.counts() + '</p></div></div><div class="folio">' + folioL + '</div>';
     right = run(ko ? '차례' : 'Contents') +
       '<div class="contents"><ol>' + list.map(function (e, i) {
-        return '<li><button type="button" data-go="' + (i + 1) + '">' + (ko ? '도판 ' : 'Plate ') + roman(i + 1) + ' · ' + VM.name(e) + '</button><span class="dots"></span><span>' + (i * 2 + 4) + '</span></li>';
+        return '<li><button type="button" data-go="' + (i + 1) + '">' + (ko ? '소장품 ' : 'Plate ') + roman(i + 1) + ' · ' + VM.name(e) + '</button><span class="dots"></span><span>' + (i * 2 + 4) + '</span></li>';
       }).join('') + '<li><button type="button" data-go="' + (list.length + 1) + '">' + (ko ? '부록 · 독자 의견' : 'Appendix · Reader reply') + '</button><span class="dots"></span><span>' + (list.length * 2 + 4) + '</span></li></ol></div><div class="folio">' + folioR + '</div>';
   } else if (spread <= list.length) {
     var e = list[spread - 1], live = e.status === 'live';
-    left = run((ko ? '도판 ' : 'Plate ') + roman(spread)) +
+    left = run((ko ? '소장품 ' : 'Plate ') + roman(spread)) +
       '<div class="plate">' + (live ? '<a href="' + e.url + '" target="_blank" rel="noopener"><img src="' + e.thumb + '" alt="' + VM.name(e) + '"></a>' : '<div class="void">' + VM.t('upcoming') + '</div>') +
-      '<div class="cap"><b>' + (ko ? '도판 ' : 'Plate ') + roman(spread) + '.</b> ' + VM.name(e) + (live ? ', ' + e.deployed.slice(0, 4) + '. ' + (ko ? '화면 갈무리.' : 'Screen capture.') : '. ' + (ko ? '도판 준비 중.' : 'Plate in preparation.')) + '</div></div><div class="folio">' + folioL + '</div>';
+      '<div class="cap"><b>' + (ko ? '소장품 ' : 'Plate ') + roman(spread) + '.</b> ' + VM.name(e) + (live ? ', ' + e.deployed.slice(0, 4) + '. ' + (ko ? '화면 갈무리.' : 'Screen capture.') : '. ' + (ko ? '이미지 준비 중.' : 'Plate in preparation.')) + '</div></div><div class="folio">' + folioL + '</div>';
     var rows = live
       ? [[ko ? '재료' : 'Medium', e.stack.join(', ')], [VM.t('made'), VM.days(e.days) + ' (' + VM.date(e.started) + ' – )'], [VM.t('version'), e.version], [VM.t('deployed'), VM.date(e.deployed)], [ko ? '소장 번호' : 'Accession', e.no]]
       : [[VM.t('noted'), VM.date(e.noted)], [ko ? '소장 번호' : 'Accession', e.no]];
@@ -163,7 +167,7 @@ function draw() {
   Array.prototype.forEach.call(book.querySelectorAll('[data-go]'), function (b) { b.addEventListener('click', function () { spread = Number(b.getAttribute('data-go')); draw(); }); });
   var strip = document.getElementById('strip');
   var items = [{ tag: ko ? '차례' : 'Contents', label: VM.t('site'), mini: ko ? '차례' : 'Contents' }]
-    .concat(list.map(function (e, i) { return { tag: (ko ? '도판 ' : 'Plate ') + roman(i + 1), label: VM.name(e), img: e.status === 'live' ? e.thumb : null, mini: VM.t('upcoming') }; }))
+    .concat(list.map(function (e, i) { return { tag: (ko ? '소장품 ' : 'Plate ') + roman(i + 1), label: VM.name(e), img: e.status === 'live' ? e.thumb : null, mini: VM.t('upcoming') }; }))
     .concat([{ tag: ko ? '부록' : 'Appendix', label: VM.t('formTitle'), mini: ko ? '독자 의견' : 'Reader reply' }]);
   strip.innerHTML = items.map(function (it, k) {
     return '<button type="button" data-go="' + k + '" aria-current="' + (k === spread) + '"><span class="mini">' + (it.img ? '<img src="' + it.img + '" alt="">' : it.mini) + '</span><span class="lab"><b>' + it.tag + '</b>' + it.label + '</span></button>';
