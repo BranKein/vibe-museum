@@ -45,7 +45,7 @@ export const PAGE_META = {
     canonical: 'hall.html',
   },
   'catalogue.html': {
-    title: '카탈로그 · Catalogue — 바이브 뮤지엄 Vibe Museum',
+    title: '소장품 카탈로그 · Catalogue — 바이브 뮤지엄 Vibe Museum',
     description: '바이브 코딩으로 만든 작품들을 한 장씩 넘기는 카탈로그. A catalogue of things made by vibe coding, one plate at a time.',
     canonical: 'catalogue.html',
   },

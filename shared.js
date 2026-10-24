@@ -78,7 +78,7 @@
   var THEMES = [
     { id: 'pinboard', file: 'pinboard.html', name: { ko: '핀보드', en: 'Pinboard' }, desc: { ko: '썸네일을 엇갈려 쌓은 벽. 마우스를 올리면 카드가 뒤집혀 설명이 나옵니다.', en: 'A wall of staggered thumbnails that turn over as you hover.' } },
     { id: 'hall', file: 'hall.html', name: { ko: '3D 전시관', en: 'Gallery Walk' }, desc: { ko: '복도를 걸으며 액자 옆 안내판에서 들어갑니다.', en: 'Walk the corridor and step in from the label beside each work.' } },
-    { id: 'catalogue', file: 'catalogue.html', name: { ko: '카탈로그', en: 'Catalogue' }, desc: { ko: '한 장씩 넘기는 카탈로그. 아래 띠에 모든 페이지가 있습니다.', en: 'A book of plates, with every page in a strip below.' } },
+    { id: 'catalogue', file: 'catalogue.html', name: { ko: '소장품 카탈로그', en: 'Catalogue' }, desc: { ko: '한 장씩 넘기는 카탈로그. 아래 띠에 모든 페이지가 있습니다.', en: 'A book of plates, with every page in a strip below.' } },
     { id: 'night', file: 'night.html', name: { ko: '야간 개장', en: 'After Hours' }, desc: { ko: '큰 글씨와 큰 그림의 전시실. 손전등으로 둘러볼 수도 있습니다.', en: 'Big type and big pictures, with an optional torch.' } },
   ];
   var mode = read('vm.mode');

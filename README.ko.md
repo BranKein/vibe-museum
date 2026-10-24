@@ -9,14 +9,14 @@
 | 핀보드 | 3D 전시관 |
 |---|---|
 | ![핀보드](docs/screenshots/pinboard-ko.jpg) | ![3D 전시관](docs/screenshots/hall-ko.jpg) |
-| **카탈로그** | **야간 개장** |
-| ![카탈로그](docs/screenshots/catalogue-ko.jpg) | ![야간 개장](docs/screenshots/night-ko.jpg) |
+| **소장품 카탈로그** | **야간 개장** |
+| ![소장품 카탈로그](docs/screenshots/catalogue-ko.jpg) | ![야간 개장](docs/screenshots/night-ko.jpg) |
 
 | 전시관 | 파일 | 모습 |
 |---|---|---|
 | 핀보드 | `pinboard.html` | 썸네일을 엇갈려 쌓은 벽. 마우스를 올리면 설명이 펼쳐지거나 카드가 뒤집힌다 |
 | 3D 전시관 | `hall.html` | 복도를 걷는다. 액자 옆 안내판의 버튼으로 들어가고, 아래 썸네일 띠로 이동한다 |
-| 카탈로그 | `catalogue.html` | 한 장씩 넘기는 카탈로그. 아래 띠에 모든 페이지가 있다 |
+| 소장품 카탈로그 | `catalogue.html` | 한 장씩 넘기는 카탈로그. 아래 띠에 모든 페이지가 있다 |
 | 야간 개장 | `night.html` | 큰 글씨와 큰 그림. 어둡게 보기에서는 손전등으로 둘러볼 수 있다 |
 
 - `index.html`은 지난번에 본 전시관으로, 처음이면 핀보드로 보낸다.
@@ -83,9 +83,9 @@ python3 -m http.server 5191
 
 저장소 Variables가 있을 때만 붙는다. 하나도 없으면 빌드 결과의 페이지와 `config.js`가 광고를 넣기 전과 똑같다.
 
-- `ADSENSE_CLIENT`: 게시자 ID(`ca-pub-…`, `pub-…`도 받아 `ca-pub-…`로 맞춘다). 있으면 핀보드·카탈로그·야간 개장의 `<head>`에 AdSense 스크립트가 붙고(사이트 확인에도 쓰인다), `config.js`에 `adsenseClient`와 `adsenseSlots`가 들어간다.
+- `ADSENSE_CLIENT`: 게시자 ID(`ca-pub-…`, `pub-…`도 받아 `ca-pub-…`로 맞춘다). 있으면 핀보드·소장품 카탈로그·야간 개장의 `<head>`에 AdSense 스크립트가 붙고(사이트 확인에도 쓰인다), `config.js`에 `adsenseClient`와 `adsenseSlots`가 들어간다.
 - `ADSENSE_SLOT_INFEED`: 핀보드의 광고 카드. 세 번째 전시품 뒤(그보다 적으면 마지막 전시품 뒤)에 카드 모양으로 들어간다.
-- `ADSENSE_SLOT_DISPLAY`: 카탈로그과 야간 개장의 본문 아래, 꼬리말 위의 가로 상자.
+- `ADSENSE_SLOT_DISPLAY`: 소장품 카탈로그와 야간 개장의 본문 아래, 꼬리말 위의 가로 상자.
 - 광고 자리는 게시자 ID와 그 자리의 광고 단위 ID가 모두 있을 때만 생긴다. 모두 "광고 · Ad" 표시가 붙는다. 그리기는 `shared.js`(`ads()`)가 한다.
 - 3D 전시관, 입구(`index.html`), 공유 페이지에는 광고가 없다.
 - 광고가 채워지지 않거나(`data-ad-status="unfilled"`) 광고 차단기로 스크립트가 막히면 상자를 숨긴다.
