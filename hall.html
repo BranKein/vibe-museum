@@ -105,7 +105,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: tr
   <div class="hint" id="hint"></div>
   <div class="sr" id="info" aria-live="polite"></div>
   <div class="hotspots" id="hotspots" hidden></div>
-  <div class="walk"><button class="btn" type="button" id="prev" aria-label="Previous">←</button><button class="btn" type="button" id="next" aria-label="Next">→</button></div>
+  <div class="walk"><button class="btn" type="button" id="prev" aria-label="Previous">←</button><button class="btn" type="button" id="reset" aria-label="Look at the work again">⟲</button><button class="btn" type="button" id="next" aria-label="Next">→</button></div>
 </section>
 <nav class="strip" id="strip" aria-label="Works"></nav>
 <section class="ideas" aria-labelledby="ideas-h">
@@ -429,7 +429,7 @@ function furnish() {
     var info = boardFor(e, i, h + 0.26); world.textures.push(info.tex);
     var bx = (w + 0.26) / 2 + 0.4 + BOARD_W / 2;
     var board = new THREE.Mesh(new THREE.PlaneGeometry(BOARD_W, info.h), new THREE.MeshBasicMaterial({ map: info.tex }));
-    board.position.set(bx, 0, 0.02); holder.add(board);
+    board.position.set(bx, 0, 0.02); board.userData.index = i; holder.add(board);
     var left = -(w + 0.26) / 2, right = bx + BOARD_W / 2;
     world.dims[i] = { w: right - left, h: Math.max(h + 0.26, info.h), cx: (left + right) / 2 };
     // Frame and label are centred on the spot together: step back along the wall by half the label's extra width.
@@ -442,13 +442,15 @@ function furnish() {
   g.updateMatrixWorld(true);
 }
 
-var anim = null, yaw = 0;
+var anim = null, yaw = 0, UP = new THREE.Vector3(0, 1, 0);
 function go(i, instant) {
   current = Math.max(-1, Math.min(list.length - 1, i));
   panel(); strip();
   if (!world) return;
   var to = viewFor(current), cam = world.camera;
-  var from = { pos: cam.position.clone(), look: world.look ? world.look.clone() : to.look.clone(), off: world.off || { x: 0, y: 0 } };
+  // Start from where one is actually looking, dragged turn included, so the walk never jumps first.
+  var seen = world.look ? cam.position.clone().add(world.look.clone().sub(cam.position).applyAxisAngle(UP, yaw)) : to.look.clone();
+  var from = { pos: cam.position.clone(), look: seen, off: world.off || { x: 0, y: 0 } };
   yaw = 0;
   if (instant || reduce) { cam.position.copy(to.pos); world.look = to.look.clone(); applyOffset(to.off); anim = null; return; }
   // Turn by the heading, the shorter way round, so even a half turn sweeps smoothly instead of snapping.
@@ -477,7 +479,7 @@ function loop(now) {
       if (k >= 1) anim = null;
     }
     var look = world.look.clone().sub(cam.position);
-    look.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    look.applyAxisAngle(UP, yaw);
     cam.lookAt(cam.position.clone().add(look));
     world.renderer.render(world.scene, cam);
     placeHotspots();
@@ -487,7 +489,7 @@ function loop(now) {
 function placeHotspots() {
   var box = document.getElementById('hotspots');
   var b = world.boards[current];
-  if (anim || current < 0 || !b || !b.buttons.length || Math.abs(yaw) > 0.02) { box.hidden = true; return; }
+  if (anim || current < 0 || !b || !b.buttons.length || Math.abs(Math.atan2(Math.sin(yaw), Math.cos(yaw))) > 0.02) { box.hidden = true; return; }
   var W = stage.clientWidth, H = stage.clientHeight, links = box.children;
   b.buttons.forEach(function (btn, k) {
     var a = b.mesh.localToWorld(new THREE.Vector3(btn.x0, btn.y0, 0)).project(world.camera);
@@ -541,20 +543,21 @@ window.addEventListener('pointermove', function (ev) {
   if (!drag) return;
   var dx = ev.clientX - drag.x;
   if (Math.abs(dx) > 4) drag.moved = true;
-  yaw = Math.max(-0.9, Math.min(0.9, drag.yaw + dx * 0.004));
+  yaw = drag.yaw + dx * 0.004;
 });
 window.addEventListener('pointerup', function (ev) {
   if (drag && !drag.moved && world) {
     var r = world.renderer.domElement.getBoundingClientRect();
     var p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     var ray = new THREE.Raycaster(); ray.setFromCamera(p, world.camera);
-    var hit = ray.intersectObjects(world.frames)[0];
+    var hit = ray.intersectObjects(world.frames.concat(world.boards.map(function (b) { return b.mesh; })))[0];
     if (hit) go(hit.object.userData.index);
   }
   drag = null;
 });
 document.getElementById('prev').addEventListener('click', function () { go(current - 1); });
 document.getElementById('next').addEventListener('click', function () { go(current + 1); });
+document.getElementById('reset').addEventListener('click', function () { go(current); });
 document.addEventListener('keydown', function (ev) {
   if (ev.target.closest('input, textarea')) return;
   if (ev.key === 'ArrowLeft') go(current - 1);
@@ -563,6 +566,18 @@ document.addEventListener('keydown', function (ev) {
 window.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
 
+/** The label fonts the canvases use. */
+var LABEL_FONTS = ['500 34px "Noto Sans KR"', '400 39px "Noto Sans KR"', '700 42px "Noto Sans KR"', '900 84px "Noto Serif KR"'];
+/**
+ * Google Fonts serves Korean in slices and only fetches the slices the page's own text uses, and a canvas does not
+ * ask for any. So fetch the glyphs of everything the labels will say before drawing them, or they fall back.
+ */
+function labelFontsReady() {
+  if (!document.fonts || !document.fonts.load) return Promise.resolve();
+  var text = VM.exhibits().map(function (e) { return [VM.name(e), VM.pick(e.blurb), e.no, e.version, e.deployed ? VM.date(e.deployed) : '', e.noted ? VM.date(e.noted) : '', (e.stack || []).join(', '), e.days != null ? VM.days(e.days) : ''].join(' '); }).join(' ') +
+    ['live', 'upcoming', 'pcOnly', 'version', 'deployed', 'stack', 'made', 'noted', 'enter', 'repo'].map(VM.t).join(' ') + ' ↗/·0123456789';
+  return Promise.all(LABEL_FONTS.map(function (f) { return document.fonts.load(f, text).catch(function () {}); }));
+}
 function render() {
   list = VM.exhibits();
   if (current >= list.length) current = list.length - 1;
@@ -580,7 +595,7 @@ function render() {
 world = window.THREE ? build() : null;
 if (!window.THREE) { var fb = document.createElement('div'); fb.className = 'fallback'; fb.textContent = '3D'; stage.insertBefore(fb, stage.firstChild); }
 resize();
-VM.onLang(function () { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(render); });
+VM.onLang(function () { labelFontsReady().then(render); });
 VM.wireForm(document.getElementById('idea-form'));
 VM.start();
 requestAnimationFrame(loop);
