@@ -1,5 +1,5 @@
 # Deploys the museum.
-# - A tag v* (e.g. v0.0.1) tests and builds it, brings its hosting up to date in BranKein/vive-infra, then uploads
+# - A tag v* (e.g. v0.0.1) tests and builds it, brings its hosting up to date in BranKein/vibe-infra, then uploads
 #   the build to S3, refreshes CloudFront and updates the visitor idea function.
 # - Another project's deploy (repository_dispatch "exhibit-updated"), a manual run, or the daily run (which picks up
 #   changes to the root repository's ideas/) rebuild the latest released tag with fresh exhibit data. These skip
@@ -23,8 +23,8 @@ permissions:
   contents: read
 
 env:
-  INFRA_REPO: BranKein/vive-infra
-  SITE: vive-museum
+  INFRA_REPO: BranKein/vibe-infra
+  SITE: vibe-museum
 
 jobs:
   deploy:
@@ -144,7 +144,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths "/*" --query Invalidation.Id --output text
 
-      # The visitor idea function lives in vive-infra; only its code ships from here. Set the variable
+      # The visitor idea function lives in vibe-infra; only its code ships from here. Set the variable
       # IDEAS_FUNCTION_NAME once that stack is applied.
       - name: Update the idea function
         if: steps.release.outputs.tag != '' && vars.IDEAS_FUNCTION_NAME != ''
@@ -155,7 +155,7 @@ jobs:
           aws lambda update-function-code --function-name "$FUNCTION" --zip-file fileb://ideas.zip --query LastModified --output text
           aws lambda wait function-updated-v2 --function-name "$FUNCTION"
 
-      # Visitors whose idea (with "- 출처: vive-museum#N") is now "완료" get their one email.
+      # Visitors whose idea (with "- 출처: vibe-museum#N") is now "완료" get their one email.
       - name: Tell visitors their idea is built
         if: steps.release.outputs.tag != '' && vars.IDEAS_FUNCTION_NAME != ''
         env:

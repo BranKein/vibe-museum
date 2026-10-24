@@ -1,6 +1,6 @@
 // The visitor idea function. Routes (HTTP API, payload 2.0):
 //   POST /ideas                     a visitor leaves an idea (JSON: title, description, email?, turnstileToken, lang)
-//   GET|POST /review?t=&d=          the owner approves (issue in vive-museum) or rejects (deleted)
+//   GET|POST /review?t=&d=          the owner approves (issue in vibe-museum) or rejects (deleted)
 //   GET|POST /confirm?t=            a visitor confirms their address
 //   GET|POST /unsubscribe?t=        a visitor drops their address
 // Direct invocations (no HTTP):
@@ -120,7 +120,7 @@ export function makeApp(deps) {
         { value: 'reject', label: '거절: 지우기', kind: approveFirst ? 'plain' : 'no' },
       ];
       return html(200, actionPage({
-        title: '아이디어 검토', intro: '승인하면 vive-museum에 visitor-idea 이슈(제목·설명만)를 만들고, 거절하면 지웁니다.',
+        title: '아이디어 검토', intro: '승인하면 vibe-museum에 visitor-idea 이슈(제목·설명만)를 만들고, 거절하면 지웁니다.',
         detail: ideaBox(idea), token: params.t, path: '/review', buttons: approveFirst ? buttons : buttons.reverse(), lang: 'ko', siteUrl: config.siteUrl,
       }));
     }

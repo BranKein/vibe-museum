@@ -52,7 +52,7 @@ export function parseIdea(file, text) {
     kind: SHOWN[status] || 'unknown',
     noted: (/\d{4}-\d{2}-\d{2}/.exec(field('작성일')) || [''])[0],
     repo: parseGithubUrl(field('저장소')),
-    // "- 출처: vive-museum#12" ties an idea to the visitor's issue, so the visitor hears when it is built.
+    // "- 출처: vibe-museum#12" ties an idea to the visitor's issue, so the visitor hears when it is built.
     sourceIssue: Number((/vi[vb]e-museum#(\d+)/.exec(field('출처')) || [])[1]) || null,
   };
 }

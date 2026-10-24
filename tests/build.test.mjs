@@ -15,8 +15,8 @@ test('sharePage previews the exhibit and sends visitors to the museum', () => {
   const html = sharePage({
     id: 'w', url: 'https://w.yeonhyuk.me', thumb: 'img/exhibits/w.jpg',
     title: { ko: '창고', en: 'Warehouse' }, blurb: { ko: '설명', en: 'About' },
-  }, 'https://vive-museum.yeonhyuk.me', '');
-  assert.match(html, /og:image" content="https:\/\/vive-museum.yeonhyuk.me\/img\/exhibits\/w.jpg"/);
-  assert.match(html, /og:url" content="https:\/\/vive-museum.yeonhyuk.me\/e\/w.html"/);
+  }, 'https://vibe-museum.yeonhyuk.me', '');
+  assert.match(html, /og:image" content="https:\/\/vibe-museum.yeonhyuk.me\/img\/exhibits\/w.jpg"/);
+  assert.match(html, /og:url" content="https:\/\/vibe-museum.yeonhyuk.me\/e\/w.html"/);
   assert.match(html, /http-equiv="refresh" content="0; url=..\/index.html"/);
 });

@@ -1,7 +1,7 @@
 // Lambda entry: wires the idea app to DynamoDB, SES, SSM, GitHub and Turnstile. Uses only the AWS SDK that the
 // Node.js runtime already has, so the package is just these files.
 //
-// Environment (set by vive-infra): TABLE, OWNER_EMAIL, FROM_EMAIL, API_BASE, SITE_URL, ISSUE_REPO, PARAM_PREFIX,
+// Environment (set by vibe-infra): TABLE, OWNER_EMAIL, FROM_EMAIL, API_BASE, SITE_URL, ISSUE_REPO, PARAM_PREFIX,
 // DAILY_LIMIT (ideas taken per day across the site; 50 when unset).
 // Parameters under PARAM_PREFIX: token-secret, turnstile-secret, github-token. "unset" counts as not set.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -75,7 +75,7 @@ const github = {
     const { githubToken } = await secrets();
     const res = await fetch('https://api.github.com/repos/' + env.ISSUE_REPO + '/issues', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'vive-museum-ideas' },
+      headers: { Authorization: 'Bearer ' + githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'vibe-museum-ideas' },
       body: JSON.stringify(issue),
     });
     if (!res.ok) throw new Error('GitHub ' + res.status + ': ' + (await res.text()).slice(0, 200));

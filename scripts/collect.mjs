@@ -11,11 +11,11 @@ import { fileURLToPath } from 'node:url';
 import { buildExhibits, builtIssues, latestVersionTag, parseGitmodules, parseIdea, repoKey, seoulDate } from './lib.mjs';
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const ROOT_REPO = process.env.ROOT_REPO || 'BranKein/vive-coding-playground';
+const ROOT_REPO = process.env.ROOT_REPO || 'BranKein/vibe-coding-playground';
 const API = 'https://api.github.com';
 
 function headers(raw) {
-  const h = { 'User-Agent': 'vive-museum-build', Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json' };
+  const h = { 'User-Agent': 'vibe-museum-build', Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json' };
   if (process.env.GITHUB_TOKEN) h.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN;
   return h;
 }

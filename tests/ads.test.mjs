@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { AD_PAGES, adSlot, adsenseClient, adsenseTag, configScript, renderPage, sharePage } from '../scripts/build.mjs';
 
 const PAGES = ['index.html', 'pinboard.html', 'hall.html', 'catalogue.html', 'night.html'];
-const SITE = 'https://vive-museum.yeonhyuk.me';
+const SITE = 'https://vibe-museum.yeonhyuk.me';
 const EXHIBITS = [{ id: 'w', status: 'live', url: 'https://w.yeonhyuk.me', deployed: '2026-10-16', title: { ko: '창고', en: 'Warehouse' }, blurb: { ko: '설명', en: 'About' } }];
 const ENV = { ADSENSE_CLIENT: 'pub-0000000000000000', ADSENSE_SLOT_INFEED: '1234567890', ADSENSE_SLOT_DISPLAY: '2345678901' };
 const LOADER = 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000';

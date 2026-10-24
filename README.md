@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-A static site that exhibits projects made by vibe coding. Live at <https://vive-museum.yeonhyuk.me>.
+A static site that exhibits projects made by vibe coding. Live at <https://vibe-museum.yeonhyuk.me>.
 
 The same exhibits can be viewed in four halls, and visitors pick one from the top bar. The chosen hall, language and light/dark setting are remembered in the browser.
 
@@ -39,12 +39,12 @@ python3 -m http.server 5191
 
 ## Exhibit list
 
-`scripts/collect.mjs` reads the root repository (`BranKein/vive-coding-playground`; locally, the folder that contains this repository).
+`scripts/collect.mjs` reads the root repository (`BranKein/vibe-coding-playground`; locally, the folder that contains this repository).
 
 - On view: reads `deploy/exhibit.json` and `deploy/site.json` from the main branch of each repository in `.gitmodules`. A repository is shown only once it has a `v*` tag. The address is `https://<subdomain>.yeonhyuk.me`, the version and date come from the latest tag, and the build period runs from the first commit to `v1.0.0` (or to the latest tag if there is none).
 - In preparation: ideas in `ideas/` whose status is idea, on hold or in progress. Repositories already on view are left out. The museum itself has a `deploy/exhibit.json` and is exhibited like any other project. The lines used for the English screens follow the format in `ideas/README.md`.
 
-Format of `deploy/exhibit.json` (example: vive-warehouse-tycoon):
+Format of `deploy/exhibit.json` (example: vibe-warehouse-tycoon):
 
 ```json
 {
@@ -57,14 +57,14 @@ Format of `deploy/exhibit.json` (example: vive-warehouse-tycoon):
 }
 ```
 
-`id` (default: the repository name without `vive-`) and `aspect` (default 4:3) can be left out. Without a thumbnail the exhibit is hung with a placeholder picture.
+`id` (default: the repository name without `vibe-` or `vive-`) and `aspect` (default 4:3) can be left out. Without a thumbnail the exhibit is hung with a placeholder picture.
 
 ## Deployment
 
-Same structure as the other projects (`docs/deploy.md` in the root repository). Pushing a `v*` tag makes `.github/workflows/deploy.yml` test and build, reconcile `sites/vive-museum` in vive-infra, upload to S3 and invalidate CloudFront.
+Same structure as the other projects (`docs/deploy.md` in the root repository). Pushing a `v*` tag makes `.github/workflows/deploy.yml` test and build, reconcile `sites/vibe-museum` in vibe-infra, upload to S3 and invalidate CloudFront.
 
 - When another project finishes deploying it sends a `repository_dispatch` (`exhibit-updated`), and this workflow rebuilds and redeploys the latest tag with fresh exhibit data. The same happens every morning (06:17 KST) and on manual runs. Nothing happens before the first tag.
-- Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (IAM user `deploy-vive-museum`), `INFRA_REPO_TOKEN`
+- Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (IAM user `deploy-vibe-museum`), `INFRA_REPO_TOKEN`
 - Variables: `AWS_REGION`, `S3_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID` (set). Optional: `CF_BEACON_TOKEN`, `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION`, `IDEAS_API_URL`, `TURNSTILE_SITE_KEY`, `IDEAS_FUNCTION_NAME`, `ADSENSE_CLIENT`, `ADSENSE_SLOT_INFEED`, `ADSENSE_SLOT_DISPLAY`
 - Link previews: every page has Open Graph tags (`img/og.png`), and each exhibit has `e/<id>.html`.
 
@@ -92,12 +92,12 @@ Added only when the repository Variables are set. With none of them, the built p
 
 ## Visitor idea function
 
-`lambda/ideas/` (Node.js 22, no dependencies). The AWS resources (API Gateway, DynamoDB, SES, SSM parameters) are created by `sites/vive-museum-ideas` in vive-infra, and the deploy workflow uploads the code (when `IDEAS_FUNCTION_NAME` is set).
+`lambda/ideas/` (Node.js 22, no dependencies). The AWS resources (API Gateway, DynamoDB, SES, SSM parameters) are created by `sites/vibe-museum-ideas` in vibe-infra, and the deploy workflow uploads the code (when `IDEAS_FUNCTION_NAME` is set).
 
 - `POST /ideas` → saved to DynamoDB awaiting approval; the operator gets an approve/reject email, and the visitor gets a confirmation email if they left an address
 - `/review`, `/confirm`, `/unsubscribe` → links only open a confirmation screen, and its button (POST) does the work. Link tokens are signed and single-use
 - Approving opens a `visitor-idea` issue in this repository (title and description only). Rejecting deletes it. Anything left unanswered for 30 days is removed by a DynamoDB TTL
 - Every hour `{ "task": "cleanup" }`: deletes emails not confirmed within 24 hours
-- On deploy `{ "task": "built", "issues": [...] }`: notifies, once, the visitors of completed ideas in `ideas/` that carry `- 출처: vive-museum#N`, then deletes them
+- On deploy `{ "task": "built", "issues": [...] }`: notifies, once, the visitors of completed ideas in `ideas/` that carry `- 출처: vibe-museum#N`, then deletes them
 - Without a Turnstile secret key (`unset`) the human check is skipped. The rate limit (5 per hour per address) and length limits (title 100 characters, description 2,000 characters) always apply
 - Test mail: `node scripts/test-mail.mjs > /tmp/mail.json`, then `aws sesv2 send-email --region ap-northeast-2 --cli-input-json file:///tmp/mail.json`

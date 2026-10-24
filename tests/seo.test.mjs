@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { LIST_SLOT, PAGE_META, fill, jsonLd, pageHead, robotsTxt, setTitle, sharePage, sitemapXml, staticList, verificationTags } from '../scripts/build.mjs';
 
-const SITE = 'https://vive-museum.yeonhyuk.me';
+const SITE = 'https://vibe-museum.yeonhyuk.me';
 const EXHIBITS = [
   { id: 'p', status: 'upcoming', noted: '2026-10-12', title: { ko: '문제', en: 'Problems' }, blurb: { ko: '준비 <중>', en: 'Soon' } },
   { id: 'w', status: 'live', url: 'https://w.yeonhyuk.me', deployed: '2026-10-16', title: { ko: '창고', en: 'Warehouse' }, blurb: { ko: '설명', en: 'About' } },

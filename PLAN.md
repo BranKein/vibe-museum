@@ -99,3 +99,10 @@
 - SES 도메인 인증, 받는 주소 확인, 샌드박스 해제 신청
 - Turnstile 사이트 키, 이슈를 만들 GitHub 토큰
 - 다른 프로젝트의 배포 토큰이 이 저장소에 `repository_dispatch`를 보낼 수 있게 범위 넓히기
+
+### 5. 이름 변경 (2026-10-24, vive-museum → vibe-museum)
+
+- 저장소는 `BranKein/vibe-museum`, 주소는 `vibe-museum.yeonhyuk.me`. 위의 기록은 그때 이름 그대로 둔다.
+- 인프라는 새 스택 `sites/vibe-museum`, `sites/vibe-museum-ideas`(vibe-infra#7). 옛 스택은 새 주소 배포를 확인한 뒤 지우고, 옛 주소는 같은 경로의 새 주소로 301을 보낸다.
+- 아이디어 테이블 항목은 새 테이블로 옮긴다. 옛 메일 속 확인·검토·수신 거부 링크는 옛 API를 가리켜 동작하지 않는다.
+- `- 출처: vive-museum#N`도 계속 읽는다(GitHub이 옛 이름을 새 저장소로 넘겨준다).

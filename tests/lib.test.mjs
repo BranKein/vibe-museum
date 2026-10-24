@@ -89,7 +89,7 @@ const PROJECT = {
 test('buildExhibits: live from the projects (the museum too), upcoming from the ideas', () => {
   const ideas = [
     parseIdea('periodic.md', IDEA),
-    parseIdea('museum.md', '# 박물관\n\n- 상태: 구현 중\n- 작성일: 2026-10-12\n- 저장소: https://github.com/BranKein/vive-museum\n'),
+    parseIdea('museum.md', '# 박물관\n\n- 상태: 구현 중\n- 작성일: 2026-10-12\n- 저장소: https://github.com/BranKein/vibe-museum\n'),
     parseIdea('warehouse.md', '# 창고\n\n- 상태: 구현 중\n- 작성일: 2026-10-11\n- 저장소: https://github.com/BranKein/vive-warehouse-tycoon\n'),
     parseIdea('old.md', '# 옛것\n\n- 상태: 폐기\n- 작성일: 2026-10-01\n'),
     parseIdea('later.md', '# 나중\n\n- 상태: 보류\n- 작성일: 2026-10-13\n'),
@@ -97,12 +97,12 @@ test('buildExhibits: live from the projects (the museum too), upcoming from the 
   const projects = [
     PROJECT,
     { owner: 'BranKein', repo: 'vive-infra', exhibit: null },
-    { owner: 'BranKein', repo: 'vibe-museum', exhibit: { title: 'M' }, site: { subdomain: 'vive-museum' }, version: 'v0.0.3', deployed: '2026-10-16', started: '2026-10-15' },
+    { owner: 'BranKein', repo: 'vibe-museum', exhibit: { title: 'M' }, site: { subdomain: 'vibe-museum' }, version: 'v0.0.3', deployed: '2026-10-16', started: '2026-10-15' },
     { owner: 'BranKein', repo: 'vive-untagged', exhibit: { title: 'U' }, site: { subdomain: 'u' }, version: null },
   ];
   const list = buildExhibits({ projects, ideas });
   assert.deepEqual(list.map((e) => e.id), ['museum', 'warehouse-tycoon', 'later', 'periodic']);
-  assert.equal(list[0].url, 'https://vive-museum.yeonhyuk.me');
+  assert.equal(list[0].url, 'https://vibe-museum.yeonhyuk.me');
   assert.equal(list[0].no, 'VM-004');
   const live = list[1];
   assert.equal(live.url, 'https://warehouse-tycoon.yeonhyuk.me');

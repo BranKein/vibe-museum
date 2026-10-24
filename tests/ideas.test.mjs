@@ -21,7 +21,7 @@ function setup({ turnstileSecret = 'ts', githubToken = 'gh', turnstileOk = true,
     github: { async createIssue(issue) { issues.push(issue); return 40 + issues.length; } },
     turnstile: { async verify(token) { return turnstileOk && token === 'good'; } },
     secrets: async () => ({ tokenSecret: 'secret', turnstileSecret, githubToken }),
-    config: { apiBase: 'https://api.test', siteUrl: 'https://museum.test', ownerEmail: 'owner@x.io', issueRepo: 'BranKein/vive-museum', dailyLimit },
+    config: { apiBase: 'https://api.test', siteUrl: 'https://museum.test', ownerEmail: 'owner@x.io', issueRepo: 'BranKein/vibe-museum', dailyLimit },
     now: () => clock,
     log: () => {},
   });

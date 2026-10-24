@@ -5,7 +5,7 @@
 // shared link previews that exhibit. Also writes robots.txt and sitemap.xml.
 //
 // Environment (all optional):
-//   SITE_URL                 https://vive-museum.yeonhyuk.me
+//   SITE_URL                 https://vibe-museum.yeonhyuk.me
 //   CF_BEACON_TOKEN          Cloudflare Web Analytics token; no beacon without it
 //   GOOGLE_SITE_VERIFICATION Google Search Console meta tag value; no tag without it
 //   NAVER_SITE_VERIFICATION  Naver Search Advisor meta tag value; no tag without it
@@ -199,7 +199,7 @@ export async function build({ collectFirst = true, env = process.env } = {}) {
     await collect();
   }
   if (!existsSync(join(HERE, 'data', 'exhibits.js'))) throw new Error('data/exhibits.js is missing: run npm run collect');
-  const siteUrl = (env.SITE_URL || 'https://vive-museum.yeonhyuk.me').replace(/\/+$/, '');
+  const siteUrl = (env.SITE_URL || 'https://vibe-museum.yeonhyuk.me').replace(/\/+$/, '');
   const beacon = analyticsTag(env.CF_BEACON_TOKEN);
 
   await rm(DIST, { recursive: true, force: true });

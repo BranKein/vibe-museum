@@ -132,7 +132,7 @@ export function reviewMail({ idea, reviewUrl, test = false }) {
   const reject = reviewUrl + '&d=reject';
   const text = [
     test ? '이 메일은 테스트입니다. 아래 아이디어는 가짜이고, 링크는 동작하지 않습니다.\n' : '',
-    '방문자가 아이디어를 남겼습니다. 승인하면 vive-museum 저장소에 visitor-idea 이슈(제목·설명만)를 만들고, 거절하면 지웁니다.',
+    '방문자가 아이디어를 남겼습니다. 승인하면 vibe-museum 저장소에 visitor-idea 이슈(제목·설명만)를 만들고, 거절하면 지웁니다.',
     '30일 동안 아무것도 누르지 않으면 지웁니다.',
     '',
     '제목: ' + idea.title,
@@ -148,7 +148,7 @@ export function reviewMail({ idea, reviewUrl, test = false }) {
   ].join('\n');
   const html = '<div style="font:15px/1.6 system-ui,sans-serif;max-width:560px">' +
     (test ? '<p style="background:#fff4d6;padding:8px 12px;border-radius:8px">이 메일은 테스트입니다. 아래 아이디어는 가짜이고, 링크는 동작하지 않습니다.</p>' : '') +
-    '<p>방문자가 아이디어를 남겼습니다. 승인하면 vive-museum 저장소에 <code>visitor-idea</code> 이슈(제목·설명만)를 만들고, 거절하면 지웁니다. 30일 동안 아무것도 누르지 않으면 지웁니다.</p>' +
+    '<p>방문자가 아이디어를 남겼습니다. 승인하면 vibe-museum 저장소에 <code>visitor-idea</code> 이슈(제목·설명만)를 만들고, 거절하면 지웁니다. 30일 동안 아무것도 누르지 않으면 지웁니다.</p>' +
     '<div style="border:1px solid #e2e2de;border-radius:12px;padding:14px 16px"><b>' + esc(idea.title) + '</b><p style="white-space:pre-wrap;margin:6px 0 0">' + esc(idea.description) + '</p></div>' +
     '<p>' + (idea.email ? '방문자 이메일: ' + esc(idea.email) + '<br><small>이 메일에만 적습니다. 방문자가 확인 링크를 눌러야 알림 대상이 됩니다.</small>' : '방문자 이메일: 없음') + '</p>' +
     '<p><a href="' + esc(approve) + '" style="background:#2b55a3;color:#fff;padding:9px 18px;border-radius:999px;text-decoration:none">승인</a> &nbsp; ' +
